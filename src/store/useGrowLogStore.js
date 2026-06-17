@@ -15,7 +15,7 @@ const useGrowLogStore = create(
       logs: [],
       addLog: (log) => set((state) => ({ 
         logs: [{
-          id: crypto.randomUUID(),
+          id: Date.now().toString(36) + Math.random().toString(36).substring(2),
           timestamp: new Date().toISOString(),
           ...log
         }, ...state.logs] 

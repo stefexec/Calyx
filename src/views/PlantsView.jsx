@@ -84,7 +84,7 @@ export default function PlantsView() {
   const handleAddPlant = (e) => {
     e.preventDefault();
     addPlant({
-      id: crypto.randomUUID(),
+      id: Date.now().toString(36) + Math.random().toString(36).substring(2),
       ...newPlant,
       dateGerminated: startOfDay(new Date()).toISOString(),
       dateFlippedToFlower: null,

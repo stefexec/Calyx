@@ -24,7 +24,7 @@ export default function EnvironmentsView() {
     e.preventDefault();
     if (!newEnv.name) return;
     addEnvironment({
-      id: crypto.randomUUID(),
+      id: Date.now().toString(36) + Math.random().toString(36).substring(2),
       ...newEnv,
       homeAssistantEntityIds: []
     });

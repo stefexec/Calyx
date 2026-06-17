@@ -34,7 +34,7 @@ const useTaskStore = create(
         }
       ],
       addTask: (task) => set((state) => ({ 
-        tasks: [...state.tasks, { ...task, id: crypto.randomUUID(), isCompleted: false }] 
+        tasks: [...state.tasks, { ...task, id: Date.now().toString(36) + Math.random().toString(36).substring(2), isCompleted: false }] 
       })),
       toggleTaskCompletion: (id) => set((state) => ({
         tasks: state.tasks.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)
