@@ -62,39 +62,39 @@ export default function EnvironmentsView() {
             </div>
 
             <div className="mb-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '0.5rem' }}>
-              {env.plugConfig?.light?.enabled && (
+              {(env.plugConfig?.light?.enabled ?? true) && (
                 <button onClick={() => togglePlug(env.id, 'light')} className="btn" style={{ 
                   flexDirection: 'column', 
                   padding: '1rem 0.5rem', 
-                  background: env.plugConfig.light.isOn ? 'var(--warning)' : 'rgba(255, 255, 255, 0.1)',
-                  border: env.plugConfig.light.isOn ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: env.plugConfig.light.isOn ? '#000' : 'var(--text-main)',
+                  background: (env.plugConfig?.light?.isOn || env.plugs?.light) ? 'var(--warning)' : 'rgba(255, 255, 255, 0.1)',
+                  border: (env.plugConfig?.light?.isOn || env.plugs?.light) ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                  color: (env.plugConfig?.light?.isOn || env.plugs?.light) ? '#000' : 'var(--text-main)',
                   borderRadius: 'var(--radius-md)'
                 }}>
                   <Power size={20} className="mb-2" />
                   <span className="text-xs">Light</span>
                 </button>
               )}
-              {env.plugConfig?.exhaust?.enabled && (
+              {(env.plugConfig?.exhaust?.enabled ?? true) && (
                 <button onClick={() => togglePlug(env.id, 'exhaust')} className="btn" style={{ 
                   flexDirection: 'column', 
                   padding: '1rem 0.5rem', 
-                  background: env.plugConfig.exhaust.isOn ? 'var(--info)' : 'rgba(255, 255, 255, 0.1)',
-                  border: env.plugConfig.exhaust.isOn ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: env.plugConfig.exhaust.isOn ? '#000' : 'var(--text-main)',
+                  background: (env.plugConfig?.exhaust?.isOn || env.plugs?.exhaust) ? 'var(--info)' : 'rgba(255, 255, 255, 0.1)',
+                  border: (env.plugConfig?.exhaust?.isOn || env.plugs?.exhaust) ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                  color: (env.plugConfig?.exhaust?.isOn || env.plugs?.exhaust) ? '#000' : 'var(--text-main)',
                   borderRadius: 'var(--radius-md)'
                 }}>
                   <Wind size={20} className="mb-2" />
                   <span className="text-xs">Exhaust</span>
                 </button>
               )}
-              {env.plugConfig?.humidifier?.enabled && (
+              {(env.plugConfig?.humidifier?.enabled ?? true) && (
                 <button onClick={() => togglePlug(env.id, 'humidifier')} className="btn" style={{ 
                   flexDirection: 'column', 
                   padding: '1rem 0.5rem', 
-                  background: env.plugConfig.humidifier.isOn ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
-                  border: env.plugConfig.humidifier.isOn ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: env.plugConfig.humidifier.isOn ? '#000' : 'var(--text-main)',
+                  background: (env.plugConfig?.humidifier?.isOn || env.plugs?.humidifier) ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
+                  border: (env.plugConfig?.humidifier?.isOn || env.plugs?.humidifier) ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                  color: (env.plugConfig?.humidifier?.isOn || env.plugs?.humidifier) ? '#000' : 'var(--text-main)',
                   borderRadius: 'var(--radius-md)'
                 }}>
                   <Droplets size={20} className="mb-2" />
@@ -196,7 +196,8 @@ export default function EnvironmentsView() {
               <h3 className="text-md text-primary">Smart Plugs</h3>
               
               {['light', 'exhaust', 'humidifier'].map(plugKey => {
-                const config = selectedEnvForSettings.plugConfig[plugKey] || { enabled: false, entityId: '' };
+                const plugConfig = selectedEnvForSettings.plugConfig || {};
+                const config = plugConfig[plugKey] || { enabled: true, entityId: '', isOn: false };
                 return (
                   <div key={plugKey} className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
                     <div className="flex-between mb-3">
@@ -209,7 +210,7 @@ export default function EnvironmentsView() {
                           onChange={(e) => {
                             updatePlugConfig(selectedEnvForSettings.id, plugKey, { enabled: e.target.checked });
                             setSelectedEnvForSettings(state => ({
-                              ...state, plugConfig: { ...state.plugConfig, [plugKey]: { ...config, enabled: e.target.checked } }
+                              ...state, plugConfig: { ...(state.plugConfig || {}), [plugKey]: { ...config, enabled: e.target.checked } }
                             }));
                           }}
                         />
@@ -226,7 +227,7 @@ export default function EnvironmentsView() {
                           onChange={(e) => {
                             updatePlugConfig(selectedEnvForSettings.id, plugKey, { entityId: e.target.value });
                             setSelectedEnvForSettings(state => ({
-                              ...state, plugConfig: { ...state.plugConfig, [plugKey]: { ...config, entityId: e.target.value } }
+                              ...state, plugConfig: { ...(state.plugConfig || {}), [plugKey]: { ...config, entityId: e.target.value } }
                             }));
                           }}
                           placeholder={`e.g. switch.tent_${plugKey}`} 
