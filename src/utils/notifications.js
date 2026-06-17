@@ -1,6 +1,5 @@
 import { LocalNotifications } from '@capacitor/local-notifications';
-
-const NTFY_TOPIC = 'calyx_alerts_mock';
+import useSettingsStore from '../store/useSettingsStore';
 
 export async function sendNotification(title, message, priority = 'default') {
   // 1. Android Native Notification (Capacitor)
@@ -32,15 +31,30 @@ export async function sendNotification(title, message, priority = 'default') {
     if (priority === 'high') ntfyPriority = '5';
     if (priority === 'low') ntfyPriority = '1';
 
-    await fetch(`https://ntfy.gurk.dev/calyx_alerts`, {
+    const { ntfyUrl, ntfyTopic, ntfyToken } = useSettingsStore.getState();
+
+    if (!ntfyUrl || !ntfyTopic) {
+      console.warn('ntfy URL or Topic not configured. Skipping push notification.');
+      return;
+    }
+
+    // Clean trailing slashes from URL
+    const baseUrl = ntfyUrl.replace(/\/$/, '');
+
+    const headers = {
+      'Title': title,
+      'Priority': ntfyPriority,
+      'Tags': 'warning,leaves',
+    };
+
+    if (ntfyToken) {
+      headers['Authorization'] = `Bearer ${ntfyToken}`;
+    }
+
+    await fetch(`${baseUrl}/${ntfyTopic}`, {
       method: 'POST',
       body: message,
-      headers: {
-        'Title': title,
-        'Priority': ntfyPriority,
-        'Tags': 'warning,leaves',
-        'Authorization': 'Bearer tk_jygqzxp9s8utgky5hasn7k0sgk0cm'
-      }
+      headers: headers
     });
   } catch (error) {
     console.error('Failed to send ntfy alert:', error);
