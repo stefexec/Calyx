@@ -10,7 +10,6 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 
 export default function PlantsView() {
   const { plants, addPlant, updatePlant, toggleMoistureSensor } = usePlantStore();
-  const { plants, addPlant, updatePlant, toggleMoistureSensor } = usePlantStore();
   const { logs, addLog } = useGrowLogStore();
   const { recipes } = useNutrientStore();
   const { environments } = useEnvironmentStore();
