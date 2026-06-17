@@ -10,7 +10,8 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 
 export default function PlantsView() {
   const { plants, addPlant, updatePlant, toggleMoistureSensor } = usePlantStore();
-  const { addLog } = useGrowLogStore();
+  const { plants, addPlant, updatePlant, toggleMoistureSensor } = usePlantStore();
+  const { logs, addLog } = useGrowLogStore();
   const { recipes } = useNutrientStore();
   const { environments } = useEnvironmentStore();
   
@@ -48,9 +49,12 @@ export default function PlantsView() {
       updatePlant(selectedPlant.id, { image: logImage });
     }
     
-    setSelectedPlant(null); // close modal
+    setActiveTab('charts'); // switch to history tab so they see it
     setLogImage(null);
   };
+
+  const currentPlant = selectedPlant ? plants.find(p => p.id === selectedPlant.id) || selectedPlant : null;
+  const plantLogs = currentPlant ? logs.filter(l => l.plantId === currentPlant.id) : [];
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -125,7 +129,7 @@ export default function PlantsView() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="flex-between mb-4">
-              <h2>{selectedPlant.name}</h2>
+              <h2>{currentPlant.name}</h2>
               <button className="btn btn-secondary" onClick={() => setSelectedPlant(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
             </div>
             
@@ -137,7 +141,7 @@ export default function PlantsView() {
                 <Settings size={16} className="mr-2" /> Settings
               </button>
               <button className={`btn ${activeTab === 'charts' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setActiveTab('charts')}>
-                <BarChart2 size={16} className="mr-2" /> Charts
+                <BarChart2 size={16} className="mr-2" /> History
               </button>
             </div>
 
@@ -161,7 +165,7 @@ export default function PlantsView() {
                   </div>
                 </div>
 
-                {(selectedPlant.trackPH ?? true) && (
+                {(currentPlant.trackPH ?? true) && (
                   <div>
                     <label className="text-sm text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
                       <Activity size={16} className="text-warning" /> pH Input
@@ -173,7 +177,7 @@ export default function PlantsView() {
                   </div>
                 )}
 
-                {(selectedPlant.trackEC ?? true) && (
+                {(currentPlant.trackEC ?? true) && (
                   <div>
                     <label className="text-sm text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
                       <Activity size={16} className="text-primary" /> EC Input
@@ -205,15 +209,15 @@ export default function PlantsView() {
                   <h3 className="text-md text-primary mb-3">General Profile</h3>
                   <div className="mb-3">
                     <label className="text-xs text-muted mb-1 block">Plant Name</label>
-                    <input type="text" className="input-premium" value={selectedPlant.name} onChange={(e) => updatePlant(selectedPlant.id, { name: e.target.value })} />
+                    <input type="text" className="input-premium" value={currentPlant.name} onChange={(e) => updatePlant(currentPlant.id, { name: e.target.value })} />
                   </div>
                   <div className="mb-3">
                     <label className="text-xs text-muted mb-1 block">Strain Name</label>
-                    <input type="text" className="input-premium" value={selectedPlant.strainName} onChange={(e) => updatePlant(selectedPlant.id, { strainName: e.target.value })} />
+                    <input type="text" className="input-premium" value={currentPlant.strainName} onChange={(e) => updatePlant(currentPlant.id, { strainName: e.target.value })} />
                   </div>
                   <div>
                     <label className="text-xs text-muted mb-1 block">Current Phase</label>
-                    <select className="input-premium" value={selectedPlant.currentPhase} onChange={(e) => updatePlant(selectedPlant.id, { currentPhase: e.target.value })}>
+                    <select className="input-premium" value={currentPlant.currentPhase} onChange={(e) => updatePlant(currentPlant.id, { currentPhase: e.target.value })}>
                       {Object.values(PlantPhase).map(p => <option key={p} value={p}>{p}</option>)}
                     </select>
                   </div>
@@ -224,19 +228,19 @@ export default function PlantsView() {
                   <div className="flex-between mb-3">
                     <span className="text-sm font-semibold">Track EC</span>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={selectedPlant.trackEC ?? true} onChange={(e) => updatePlant(selectedPlant.id, { trackEC: e.target.checked })} />
+                      <input type="checkbox" checked={currentPlant.trackEC ?? true} onChange={(e) => updatePlant(currentPlant.id, { trackEC: e.target.checked })} />
                     </label>
                   </div>
                   <div className="flex-between mb-3">
                     <span className="text-sm font-semibold">Track pH</span>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={selectedPlant.trackPH ?? true} onChange={(e) => updatePlant(selectedPlant.id, { trackPH: e.target.checked })} />
+                      <input type="checkbox" checked={currentPlant.trackPH ?? true} onChange={(e) => updatePlant(currentPlant.id, { trackPH: e.target.checked })} />
                     </label>
                   </div>
                   <div className="flex-between">
                     <span className="text-sm font-semibold">Soil Sensor Installed</span>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={selectedPlant.hasSoilMoistureSensor} onChange={(e) => toggleMoistureSensor(selectedPlant.id, e.target.checked)} />
+                      <input type="checkbox" checked={currentPlant.hasSoilMoistureSensor} onChange={(e) => toggleMoistureSensor(currentPlant.id, e.target.checked)} />
                     </label>
                   </div>
                 </div>
@@ -244,44 +248,74 @@ export default function PlantsView() {
             )}
 
             {activeTab === 'charts' && (
-              <div>
-                {!selectedPlant.hasSoilMoistureSensor && (
-                  <div className="text-center text-muted p-4">Soil sensor is disabled. Enable it in Settings to see charts.</div>
-                )}
-                {selectedPlant.hasSoilMoistureSensor && (!selectedPlant.history || selectedPlant.history.length === 0) && (
-                  <div className="text-center text-muted p-4">No sensor history available yet.</div>
-                )}
-                {selectedPlant.hasSoilMoistureSensor && selectedPlant.history && selectedPlant.history.length > 0 && (
-                  <div className="mt-2">
-                    <h3 className="mb-4 text-md flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                      <Activity size={18} className="text-primary" /> Sensor History
-                    </h3>
-                    <div style={{ height: '180px', width: '100%' }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={selectedPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                          <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} />
-                          <YAxis yAxisId="left" stroke="var(--info)" fontSize={10} />
-                          <YAxis yAxisId="right" orientation="right" stroke="var(--warning)" fontSize={10} />
-                          <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
-                          <Line yAxisId="left" type="monotone" dataKey="moisture" name="Moisture %" stroke="var(--info)" strokeWidth={2} dot={false} />
-                          <Line yAxisId="right" type="monotone" dataKey="temp" name="Soil Temp" stroke="var(--warning)" strokeWidth={2} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                
+                {/* Recent Logs Section */}
+                <div>
+                  <h3 className="mb-3 text-md flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
+                    <FileText size={18} className="text-primary" /> Recent Actions
+                  </h3>
+                  {plantLogs.length === 0 ? (
+                    <div className="text-muted text-sm p-4 glass" style={{ borderRadius: 'var(--radius-md)', textAlign: 'center' }}>No logs recorded yet.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {plantLogs.map(log => {
+                        const date = new Date(log.timestamp);
+                        return (
+                          <div key={log.id} className="glass" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>
+                            <div className="flex-between mb-1">
+                              <span className="text-xs text-muted">{date.toLocaleDateString()} {date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              <span className="text-xs font-semibold text-info">{log.waterVolumeLiters}L Water</span>
+                            </div>
+                            <div className="flex-between">
+                              <span className="text-sm">Watering / Feed</span>
+                              <span className="text-xs">pH: {log.phInput} | EC: {log.ecInput}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div style={{ height: '100px', width: '100%', marginTop: '1rem' }}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={selectedPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                          <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} hide />
-                          <YAxis stroke="var(--secondary)" fontSize={10} />
-                          <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
-                          <Line type="stepAfter" dataKey="lux" name="Lux (Light)" stroke="var(--secondary)" strokeWidth={2} dot={false} />
-                        </LineChart>
-                      </ResponsiveContainer>
+                  )}
+                </div>
+
+                {/* Sensor Charts Section */}
+                <div>
+                  <h3 className="mb-3 text-md flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
+                    <Activity size={18} className="text-warning" /> Sensor History
+                  </h3>
+                  {!currentPlant.hasSoilMoistureSensor ? (
+                    <div className="text-center text-muted p-4 glass" style={{ borderRadius: 'var(--radius-md)' }}>Soil sensor is disabled. Enable it in Settings to see charts.</div>
+                  ) : (!currentPlant.history || currentPlant.history.length === 0) ? (
+                    <div className="text-center text-muted p-4 glass" style={{ borderRadius: 'var(--radius-md)' }}>No sensor history available yet.</div>
+                  ) : (
+                    <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                      <div style={{ height: '180px', width: '100%' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={currentPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                            <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} />
+                            <YAxis yAxisId="left" stroke="var(--info)" fontSize={10} />
+                            <YAxis yAxisId="right" orientation="right" stroke="var(--warning)" fontSize={10} />
+                            <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                            <Line yAxisId="left" type="monotone" dataKey="moisture" name="Moisture %" stroke="var(--info)" strokeWidth={2} dot={false} />
+                            <Line yAxisId="right" type="monotone" dataKey="temp" name="Soil Temp" stroke="var(--warning)" strokeWidth={2} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div style={{ height: '100px', width: '100%', marginTop: '1rem' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={currentPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                            <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} hide />
+                            <YAxis stroke="var(--secondary)" fontSize={10} />
+                            <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                            <Line type="stepAfter" dataKey="lux" name="Lux (Light)" stroke="var(--secondary)" strokeWidth={2} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
