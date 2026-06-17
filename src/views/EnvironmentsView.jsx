@@ -3,6 +3,7 @@ import { Settings2, Sun, Moon, Database, Power, Wind, Droplets, BellRing, Plus, 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { sendNotification } from '../utils/notifications';
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function EnvironmentsView() {
   const { environments, togglePlug, addEnvironment } = useEnvironmentStore();
@@ -139,9 +140,9 @@ export default function EnvironmentsView() {
         ))}
       </div>
 
-      {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}>
-          <div className="glass-card" style={{ width: '100%', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '2rem 1.5rem', maxHeight: '80vh', overflowY: 'auto' }}>
+      {showModal && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="flex-between mb-6">
               <h2>New Tent</h2>
               <button className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
@@ -174,7 +175,8 @@ export default function EnvironmentsView() {
               <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Create Tent</button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
