@@ -262,6 +262,8 @@ h1, h2, h3, h4, h5, h6 {
   overflow-x: auto;
   padding-bottom: 0.5rem;
   scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 
 /* Hide scrollbar on touch devices (mobile) */
