@@ -2,8 +2,8 @@ import { Thermometer, Droplets, Wind, CheckCircle2, Plus, X, Calendar } from 'lu
 import useEnvironmentStore from '../store/useEnvironmentStore';
 import usePlantStore from '../store/usePlantStore';
 import useTaskStore, { TaskCategory } from '../store/useTaskStore';
-import { format, addDays, startOfWeek, isSameDay, startOfDay } from 'date-fns';
-import { useState } from 'react';
+import { format, addDays, isSameDay, startOfDay } from 'date-fns';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function DashboardView() {
@@ -15,9 +15,18 @@ export default function DashboardView() {
   const [showEventModal, setShowEventModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ plantId: '', category: TaskCategory.TRAINING, description: '' });
 
+  const scrollRef = useRef(null);
+  const selectedDateRef = useRef(null);
+
   const today = startOfDay(new Date());
-  const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
-  const weekDays = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
+  // Generate a window of 60 days (30 past, 30 future)
+  const calendarDays = Array.from({ length: 61 }).map((_, i) => addDays(today, i - 30));
+
+  useEffect(() => {
+    if (selectedDateRef.current) {
+      selectedDateRef.current.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
+    }
+  }, []); // Only scroll to center on initial mount
 
   // Mock HA Data for demonstration
   const getMockHAData = (envId) => {
@@ -37,8 +46,8 @@ export default function DashboardView() {
         </div>
       </div>
 
-      <div className="mb-6" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
-        {weekDays.map((day, idx) => {
+      <div className="mb-6" ref={scrollRef} style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none', scrollSnapType: 'x mandatory' }}>
+        {calendarDays.map((day, idx) => {
           const isSelected = isSameDay(day, selectedDate);
           const isToday = isSameDay(day, today);
           
@@ -52,9 +61,10 @@ export default function DashboardView() {
           }
 
           return (
-            <div key={idx} onClick={() => setSelectedDate(startOfDay(day))} className="flex-center" style={{ 
+            <div key={idx} ref={isSelected ? selectedDateRef : null} onClick={() => setSelectedDate(startOfDay(day))} className="flex-center" style={{ 
               flexDirection: 'column', 
               minWidth: '50px', 
+              scrollSnapAlign: 'center',
               padding: '0.5rem', 
               borderRadius: 'var(--radius-md)', 
               background: isSelected ? 'var(--primary)' : 'var(--bg-glass)',
