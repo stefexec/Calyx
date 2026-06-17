@@ -16,6 +16,7 @@ export default function PlantsView() {
   
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [activeTab, setActiveTab] = useState('log');
+  const [historyTab, setHistoryTab] = useState('actions');
   const [logForm, setLogForm] = useState({ waterVolume: 1.0, phInput: 6.2, ecInput: 1.2, recipeId: '' });
   const [logImage, setLogImage] = useState(null);
   const logImageInputRef = useRef(null);
@@ -51,6 +52,7 @@ export default function PlantsView() {
     }
     
     setActiveTab('charts'); // switch to history tab so they see it
+    setHistoryTab('actions'); // switch to actions sub-tab
     setLogImage(null);
   };
 
@@ -248,78 +250,83 @@ export default function PlantsView() {
             )}
 
             {activeTab === 'charts' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 
-                {/* Recent Logs Section */}
-                <div>
-                  <h3 className="mb-3 text-md flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                    <FileText size={18} className="text-primary" /> Recent Actions
-                  </h3>
-                  {plantLogs.length === 0 ? (
-                    <div className="text-muted text-sm p-4 glass" style={{ borderRadius: 'var(--radius-md)', textAlign: 'center' }}>No logs recorded yet.</div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      {plantLogs.map(log => {
-                        const date = new Date(log.timestamp);
-                        return (
-                          <div key={log.id} className="glass" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>
-                            <div className="flex-between mb-1">
-                              <span className="text-xs text-muted">{date.toLocaleDateString()} {date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                              <span className="text-xs font-semibold text-info">{log.waterVolumeLiters}L Water</span>
-                            </div>
-                            <div className="flex-between">
-                              <span className="text-sm">Watering / Feed</span>
-                              <span className="text-xs">
-                                {log.phInput != null && `pH: ${log.phInput}`}
-                                {log.phInput != null && log.ecInput != null && ' | '}
-                                {log.ecInput != null && `EC: ${log.ecInput}`}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                <div className="flex-center" style={{ background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '12px', gap: '4px' }}>
+                  <button className={`btn ${historyTab === 'actions' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '6px', fontSize: '0.85rem' }} onClick={() => setHistoryTab('actions')}>
+                    Recent Actions
+                  </button>
+                  <button className={`btn ${historyTab === 'sensors' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '6px', fontSize: '0.85rem' }} onClick={() => setHistoryTab('sensors')}>
+                    Sensor History
+                  </button>
                 </div>
 
-                {/* Sensor Charts Section */}
-                <div>
-                  <h3 className="mb-3 text-md flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                    <Activity size={18} className="text-warning" /> Sensor History
-                  </h3>
-                  {!currentPlant.hasSoilMoistureSensor ? (
-                    <div className="text-center text-muted p-4 glass" style={{ borderRadius: 'var(--radius-md)' }}>Soil sensor is disabled. Enable it in Settings to see charts.</div>
-                  ) : (!currentPlant.history || currentPlant.history.length === 0) ? (
-                    <div className="text-center text-muted p-4 glass" style={{ borderRadius: 'var(--radius-md)' }}>No sensor history available yet.</div>
-                  ) : (
-                    <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                      <div style={{ height: '180px', width: '100%' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={currentPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                            <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} />
-                            <YAxis yAxisId="left" stroke="var(--info)" fontSize={10} />
-                            <YAxis yAxisId="right" orientation="right" stroke="var(--warning)" fontSize={10} />
-                            <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
-                            <Line yAxisId="left" type="monotone" dataKey="moisture" name="Moisture %" stroke="var(--info)" strokeWidth={2} dot={false} />
-                            <Line yAxisId="right" type="monotone" dataKey="temp" name="Soil Temp" stroke="var(--warning)" strokeWidth={2} dot={false} />
-                          </LineChart>
-                        </ResponsiveContainer>
+                {historyTab === 'actions' && (
+                  <div>
+                    {plantLogs.length === 0 ? (
+                      <div className="text-muted text-sm p-4 glass" style={{ borderRadius: 'var(--radius-md)', textAlign: 'center' }}>No logs recorded yet.</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {plantLogs.map(log => {
+                          const date = new Date(log.timestamp);
+                          return (
+                            <div key={log.id} className="glass" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>
+                              <div className="flex-between mb-1">
+                                <span className="text-xs text-muted">{date.toLocaleDateString()} {date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                <span className="text-xs font-semibold text-info">{log.waterVolumeLiters}L Water</span>
+                              </div>
+                              <div className="flex-between">
+                                <span className="text-sm">Watering / Feed</span>
+                                <span className="text-xs">
+                                  {log.phInput != null && `pH: ${log.phInput}`}
+                                  {log.phInput != null && log.ecInput != null && ' | '}
+                                  {log.ecInput != null && `EC: ${log.ecInput}`}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div style={{ height: '100px', width: '100%', marginTop: '1rem' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={currentPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                            <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} hide />
-                            <YAxis stroke="var(--secondary)" fontSize={10} />
-                            <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
-                            <Line type="stepAfter" dataKey="lux" name="Lux (Light)" stroke="var(--secondary)" strokeWidth={2} dot={false} />
-                          </LineChart>
-                        </ResponsiveContainer>
+                    )}
+                  </div>
+                )}
+
+                {historyTab === 'sensors' && (
+                  <div>
+                    {!currentPlant.hasSoilMoistureSensor ? (
+                      <div className="text-center text-muted p-4 glass" style={{ borderRadius: 'var(--radius-md)' }}>Soil sensor is disabled. Enable it in Settings to see charts.</div>
+                    ) : (!currentPlant.history || currentPlant.history.length === 0) ? (
+                      <div className="text-center text-muted p-4 glass" style={{ borderRadius: 'var(--radius-md)' }}>No sensor history available yet.</div>
+                    ) : (
+                      <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                        <div style={{ height: '180px', width: '100%' }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={currentPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                              <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} />
+                              <YAxis yAxisId="left" stroke="var(--info)" fontSize={10} />
+                              <YAxis yAxisId="right" orientation="right" stroke="var(--warning)" fontSize={10} />
+                              <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                              <Line yAxisId="left" type="monotone" dataKey="moisture" name="Moisture %" stroke="var(--info)" strokeWidth={2} dot={false} />
+                              <Line yAxisId="right" type="monotone" dataKey="temp" name="Soil Temp" stroke="var(--warning)" strokeWidth={2} dot={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div style={{ height: '100px', width: '100%', marginTop: '1rem' }}>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={currentPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                              <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} hide />
+                              <YAxis stroke="var(--secondary)" fontSize={10} />
+                              <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                              <Line type="stepAfter" dataKey="lux" name="Lux (Light)" stroke="var(--secondary)" strokeWidth={2} dot={false} />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
