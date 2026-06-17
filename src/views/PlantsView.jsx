@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import usePlantStore, { PlantPhase, StrainType } from '../store/usePlantStore';
 import useGrowLogStore from '../store/useGrowLogStore';
+import useGalleryStore from '../store/useGalleryStore';
 import useNutrientStore from '../store/useNutrientStore';
 import useEnvironmentStore from '../store/useEnvironmentStore';
 import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2 } from 'lucide-react';
@@ -11,6 +12,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 export default function PlantsView() {
   const { plants, addPlant, updatePlant, toggleMoistureSensor } = usePlantStore();
   const { logs, addLog } = useGrowLogStore();
+  const { addGalleryImage } = useGalleryStore();
   const { recipes } = useNutrientStore();
   const { environments } = useEnvironmentStore();
   
@@ -49,6 +51,19 @@ export default function PlantsView() {
     // Auto-update profile picture if a new photo was uploaded during log
     if (logImage) {
       updatePlant(currentPlant.id, { image: logImage });
+      
+      let days = 0;
+      if (currentPlant.dateGerminated) {
+        days = Math.floor((new Date() - new Date(currentPlant.dateGerminated)) / (1000 * 60 * 60 * 24));
+      }
+
+      addGalleryImage({
+        imageBase64: logImage,
+        plantId: currentPlant.id,
+        plantName: currentPlant.name,
+        phase: currentPlant.currentPhase,
+        daysSinceGermination: days
+      });
     }
     
     setActiveTab('charts'); // switch to history tab so they see it

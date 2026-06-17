@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Tent, Sprout, Settings } from 'lucide-react';
+import { LayoutDashboard, Tent, Sprout, Image as ImageIcon, Settings } from 'lucide-react';
 import './Navigation.css';
 
 export default function Navigation() {
@@ -17,6 +17,10 @@ export default function Navigation() {
         <NavLink to="/plants" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Sprout size={24} />
           <span>Plants</span>
+        </NavLink>
+        <NavLink to="/gallery" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <ImageIcon size={24} />
+          <span>Gallery</span>
         </NavLink>
         <NavLink to="/settings" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Settings size={24} />

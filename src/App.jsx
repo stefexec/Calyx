@@ -3,6 +3,7 @@ import Navigation from './components/Navigation';
 import DashboardView from './views/DashboardView';
 import EnvironmentsView from './views/EnvironmentsView';
 import PlantsView from './views/PlantsView';
+import GalleryView from './views/GalleryView';
 import SettingsView from './views/SettingsView';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardView />} />
           <Route path="/environments" element={<EnvironmentsView />} />
           <Route path="/plants" element={<PlantsView />} />
+          <Route path="/gallery" element={<GalleryView />} />
           <Route path="/settings" element={<SettingsView />} />
         </Routes>
         <Navigation />
