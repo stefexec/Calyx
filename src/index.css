@@ -93,7 +93,7 @@ h1, h2, h3, h4, h5, h6 {
   transition: var(--transition);
 }
 
-.glass-card:active {
+.glass-card.interactive:active {
   transform: scale(0.98);
 }
 
@@ -155,6 +155,47 @@ h1, h2, h3, h4, h5, h6 {
 
 .btn-secondary:active {
   background: rgba(255, 255, 255, 0.15);
+  transform: scale(0.95);
+}
+
+/* Smart Plug Buttons */
+.btn-plug-inactive {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+}
+.btn-plug-inactive:active {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(0.95);
+}
+
+.btn-plug-active-warning {
+  background: var(--warning);
+  color: #000;
+  box-shadow: 0 4px 14px 0 rgba(245, 158, 11, 0.4);
+  border: 1px solid transparent;
+}
+.btn-plug-active-warning:active {
+  transform: scale(0.95);
+}
+
+.btn-plug-active-info {
+  background: var(--info);
+  color: #000;
+  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.4);
+  border: 1px solid transparent;
+}
+.btn-plug-active-info:active {
+  transform: scale(0.95);
+}
+
+.btn-plug-active-primary {
+  background: var(--primary);
+  color: #000;
+  box-shadow: 0 4px 14px 0 var(--primary-glow);
+  border: 1px solid transparent;
+}
+.btn-plug-active-primary:active {
   transform: scale(0.95);
 }
 

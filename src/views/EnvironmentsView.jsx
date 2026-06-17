@@ -63,40 +63,19 @@ export default function EnvironmentsView() {
 
             <div className="mb-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '0.5rem' }}>
               {(env.plugConfig?.light?.enabled ?? true) && (
-                <button onClick={() => togglePlug(env.id, 'light')} className="btn" style={{ 
-                  flexDirection: 'column', 
-                  padding: '1rem 0.5rem', 
-                  background: (env.plugConfig?.light?.isOn || env.plugs?.light) ? 'var(--warning)' : 'rgba(255, 255, 255, 0.1)',
-                  border: (env.plugConfig?.light?.isOn || env.plugs?.light) ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: (env.plugConfig?.light?.isOn || env.plugs?.light) ? '#000' : 'var(--text-main)',
-                  borderRadius: 'var(--radius-md)'
-                }}>
+                <button onClick={() => togglePlug(env.id, 'light')} className={`btn ${(env.plugConfig?.light?.isOn || env.plugs?.light) ? 'btn-plug-active-warning' : 'btn-plug-inactive'}`} style={{ flexDirection: 'column', padding: '1rem 0.5rem', borderRadius: 'var(--radius-md)' }}>
                   <Power size={20} className="mb-2" />
                   <span className="text-xs">Light</span>
                 </button>
               )}
               {(env.plugConfig?.exhaust?.enabled ?? true) && (
-                <button onClick={() => togglePlug(env.id, 'exhaust')} className="btn" style={{ 
-                  flexDirection: 'column', 
-                  padding: '1rem 0.5rem', 
-                  background: (env.plugConfig?.exhaust?.isOn || env.plugs?.exhaust) ? 'var(--info)' : 'rgba(255, 255, 255, 0.1)',
-                  border: (env.plugConfig?.exhaust?.isOn || env.plugs?.exhaust) ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: (env.plugConfig?.exhaust?.isOn || env.plugs?.exhaust) ? '#000' : 'var(--text-main)',
-                  borderRadius: 'var(--radius-md)'
-                }}>
+                <button onClick={() => togglePlug(env.id, 'exhaust')} className={`btn ${(env.plugConfig?.exhaust?.isOn || env.plugs?.exhaust) ? 'btn-plug-active-info' : 'btn-plug-inactive'}`} style={{ flexDirection: 'column', padding: '1rem 0.5rem', borderRadius: 'var(--radius-md)' }}>
                   <Wind size={20} className="mb-2" />
                   <span className="text-xs">Exhaust</span>
                 </button>
               )}
               {(env.plugConfig?.humidifier?.enabled ?? true) && (
-                <button onClick={() => togglePlug(env.id, 'humidifier')} className="btn" style={{ 
-                  flexDirection: 'column', 
-                  padding: '1rem 0.5rem', 
-                  background: (env.plugConfig?.humidifier?.isOn || env.plugs?.humidifier) ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
-                  border: (env.plugConfig?.humidifier?.isOn || env.plugs?.humidifier) ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
-                  color: (env.plugConfig?.humidifier?.isOn || env.plugs?.humidifier) ? '#000' : 'var(--text-main)',
-                  borderRadius: 'var(--radius-md)'
-                }}>
+                <button onClick={() => togglePlug(env.id, 'humidifier')} className={`btn ${(env.plugConfig?.humidifier?.isOn || env.plugs?.humidifier) ? 'btn-plug-active-primary' : 'btn-plug-inactive'}`} style={{ flexDirection: 'column', padding: '1rem 0.5rem', borderRadius: 'var(--radius-md)' }}>
                   <Droplets size={20} className="mb-2" />
                   <span className="text-xs">Humidifier</span>
                 </button>

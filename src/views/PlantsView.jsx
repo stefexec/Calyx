@@ -83,7 +83,7 @@ export default function PlantsView() {
         {plants.map(plant => {
           const daysSinceGermination = differenceInDays(new Date(), new Date(plant.dateGerminated));
           return (
-            <div key={plant.id} className="glass-card" onClick={() => setSelectedPlant(plant)} style={{ cursor: 'pointer' }}>
+            <div key={plant.id} className="glass-card interactive" onClick={() => setSelectedPlant(plant)} style={{ cursor: 'pointer' }}>
               <div style={{ width: '100%', height: '120px', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {plant.image ? (
                   <img src={plant.image} alt={plant.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
