@@ -31,28 +31,29 @@ export default function PlantsView() {
     { name: 'White Widow', type: StrainType.PHOTOPERIODIC, flowerDays: 60 }
   ];
 
+  const currentPlant = selectedPlant ? plants.find(p => p.id === selectedPlant.id) || selectedPlant : null;
+
   const handleLogSubmit = (e) => {
     e.preventDefault();
-    if (!selectedPlant) return;
+    if (!currentPlant) return;
     
     addLog({
-      plantId: selectedPlant.id,
+      plantId: currentPlant.id,
       waterVolumeLiters: logForm.waterVolume,
-      phInput: logForm.phInput,
-      ecInput: logForm.ecInput,
+      phInput: (currentPlant.trackPH ?? true) ? logForm.phInput : null,
+      ecInput: (currentPlant.trackEC ?? true) ? logForm.ecInput : null,
       appliedRecipeId: logForm.recipeId
     });
     
     // Auto-update profile picture if a new photo was uploaded during log
     if (logImage) {
-      updatePlant(selectedPlant.id, { image: logImage });
+      updatePlant(currentPlant.id, { image: logImage });
     }
     
     setActiveTab('charts'); // switch to history tab so they see it
     setLogImage(null);
   };
 
-  const currentPlant = selectedPlant ? plants.find(p => p.id === selectedPlant.id) || selectedPlant : null;
   const plantLogs = currentPlant ? logs.filter(l => l.plantId === currentPlant.id) : [];
 
   const handleImageUpload = (e) => {
@@ -268,7 +269,11 @@ export default function PlantsView() {
                             </div>
                             <div className="flex-between">
                               <span className="text-sm">Watering / Feed</span>
-                              <span className="text-xs">pH: {log.phInput} | EC: {log.ecInput}</span>
+                              <span className="text-xs">
+                                {log.phInput != null && `pH: ${log.phInput}`}
+                                {log.phInput != null && log.ecInput != null && ' | '}
+                                {log.ecInput != null && `EC: ${log.ecInput}`}
+                              </span>
                             </div>
                           </div>
                         );
