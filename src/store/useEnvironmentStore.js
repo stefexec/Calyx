@@ -67,18 +67,39 @@ const useEnvironmentStore = create(
         environments: state.environments.map(e => e.id === id ? { ...e, ...updatedEnv } : e)
       })),
       togglePlug: (envId, plugName) => set((state) => ({
-        environments: state.environments.map(e => 
-          e.id === envId 
-            ? { ...e, plugConfig: { ...e.plugConfig, [plugName]: { ...e.plugConfig[plugName], isOn: !e.plugConfig[plugName].isOn } } } 
-            : e
-        )
+        environments: state.environments.map(e => {
+          if (e.id !== envId) return e;
+          const currentPlugConfig = e.plugConfig?.[plugName] || { isOn: !!e.plugs?.[plugName] };
+          return {
+            ...e,
+            plugConfig: {
+              ...(e.plugConfig || {}),
+              [plugName]: { ...currentPlugConfig, isOn: !currentPlugConfig.isOn }
+            }
+          };
+        })
       })),
       updatePlugConfig: (envId, plugName, configUpdate) => set((state) => ({
         environments: state.environments.map(e => 
           e.id === envId 
-            ? { ...e, plugConfig: { ...e.plugConfig, [plugName]: { ...e.plugConfig[plugName], ...configUpdate } } } 
+            ? { ...e, plugConfig: { ...(e.plugConfig || {}), [plugName]: { ...(e.plugConfig?.[plugName] || {}), ...configUpdate } } } 
             : e
         )
+      })),
+      migrateLegacy: () => set((state) => ({
+        environments: state.environments.map(e => {
+          if (!e.plugConfig) {
+            return {
+              ...e,
+              plugConfig: {
+                light: { enabled: true, entityId: '', isOn: !!e.plugs?.light },
+                exhaust: { enabled: true, entityId: '', isOn: !!e.plugs?.exhaust },
+                humidifier: { enabled: !!e.plugs?.humidifier, entityId: '', isOn: !!e.plugs?.humidifier }
+              }
+            };
+          }
+          return e;
+        })
       })),
       deleteEnvironment: (id) => set((state) => ({
         environments: state.environments.filter(e => e.id !== id)
