@@ -254,3 +254,41 @@ h1, h2, h3, h4, h5, h6 {
 
 .w-full { width: 100%; }
 .block { display: block; }
+
+/* Calendar Horizontal Scroll */
+.horizontal-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+}
+
+/* Hide scrollbar on touch devices (mobile) */
+@media (pointer: coarse) {
+  .horizontal-scroll {
+    scrollbar-width: none; /* Firefox */
+  }
+  .horizontal-scroll::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+}
+
+/* Show a sleek, thin scrollbar on PC/Mouse interfaces */
+@media (pointer: fine) {
+  .horizontal-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+  }
+  .horizontal-scroll::-webkit-scrollbar {
+    height: 4px;
+  }
+  .horizontal-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+  .horizontal-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--primary);
+    border-radius: 4px;
+  }
+}

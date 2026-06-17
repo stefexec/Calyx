@@ -46,7 +46,7 @@ export default function DashboardView() {
         </div>
       </div>
 
-      <div className="mb-6" ref={scrollRef} style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none', scrollSnapType: 'x mandatory' }}>
+      <div className="mb-6 horizontal-scroll" ref={scrollRef}>
         {calendarDays.map((day, idx) => {
           const isSelected = isSameDay(day, selectedDate);
           const isToday = isSameDay(day, today);
