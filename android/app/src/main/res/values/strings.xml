@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Calyx</string>
+    <string name="title_activity_main">Calyx</string>
+    <string name="package_name">com.calyx.app</string>
+    <string name="custom_url_scheme">com.calyx.app</string>
+</resources>
