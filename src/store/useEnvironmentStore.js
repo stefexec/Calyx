@@ -18,11 +18,11 @@ const useEnvironmentStore = create(
           growMedium: GrowMedium.SOIL,
           lightHoursOn: 18,
           lightHoursOff: 6,
-          homeAssistantEntityIds: ['sensor.tent1_temp', 'sensor.tent1_humidity', 'switch.tent1_light'],
-          plugs: {
-            light: true,
-            exhaust: true,
-            humidifier: false
+          homeAssistantSensors: ['sensor.tent1_temp', 'sensor.tent1_humidity'],
+          plugConfig: {
+            light: { enabled: true, entityId: 'switch.tent1_light', isOn: true },
+            exhaust: { enabled: true, entityId: 'switch.tent1_exhaust', isOn: true },
+            humidifier: { enabled: false, entityId: '', isOn: false }
           },
           history: Array.from({ length: 24 }).map((_, i) => ({
             time: `${i}:00`,
@@ -37,11 +37,11 @@ const useEnvironmentStore = create(
           growMedium: GrowMedium.SOIL,
           lightHoursOn: 12,
           lightHoursOff: 12,
-          homeAssistantEntityIds: ['sensor.tent2_temp', 'sensor.tent2_humidity', 'switch.tent2_light'],
-          plugs: {
-            light: false,
-            exhaust: true,
-            humidifier: false
+          homeAssistantSensors: ['sensor.tent2_temp', 'sensor.tent2_humidity'],
+          plugConfig: {
+            light: { enabled: true, entityId: 'switch.tent2_light', isOn: false },
+            exhaust: { enabled: true, entityId: 'switch.tent2_exhaust', isOn: true },
+            humidifier: { enabled: false, entityId: '', isOn: false }
           },
           history: Array.from({ length: 24 }).map((_, i) => ({
             time: `${i}:00`,
@@ -51,14 +51,32 @@ const useEnvironmentStore = create(
           }))
         }
       ],
-      addEnvironment: (env) => set((state) => ({ environments: [...state.environments, { ...env, plugs: { light: false, exhaust: false, humidifier: false }, history: [] }] })),
+      addEnvironment: (env) => set((state) => ({ 
+        environments: [...state.environments, { 
+          ...env, 
+          homeAssistantSensors: [],
+          plugConfig: {
+            light: { enabled: true, entityId: '', isOn: false },
+            exhaust: { enabled: true, entityId: '', isOn: false },
+            humidifier: { enabled: true, entityId: '', isOn: false }
+          },
+          history: [] 
+        }] 
+      })),
       updateEnvironment: (id, updatedEnv) => set((state) => ({
         environments: state.environments.map(e => e.id === id ? { ...e, ...updatedEnv } : e)
       })),
       togglePlug: (envId, plugName) => set((state) => ({
         environments: state.environments.map(e => 
           e.id === envId 
-            ? { ...e, plugs: { ...e.plugs, [plugName]: !e.plugs[plugName] } } 
+            ? { ...e, plugConfig: { ...e.plugConfig, [plugName]: { ...e.plugConfig[plugName], isOn: !e.plugConfig[plugName].isOn } } } 
+            : e
+        )
+      })),
+      updatePlugConfig: (envId, plugName, configUpdate) => set((state) => ({
+        environments: state.environments.map(e => 
+          e.id === envId 
+            ? { ...e, plugConfig: { ...e.plugConfig, [plugName]: { ...e.plugConfig[plugName], ...configUpdate } } } 
             : e
         )
       })),

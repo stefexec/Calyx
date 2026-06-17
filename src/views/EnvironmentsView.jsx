@@ -1,14 +1,15 @@
 import useEnvironmentStore, { GrowMedium } from '../store/useEnvironmentStore';
-import { Settings2, Sun, Moon, Database, Power, Wind, Droplets, BellRing, Plus, X } from 'lucide-react';
+import { Settings, Sun, Moon, Database, Power, Wind, Droplets, BellRing, Plus, X, Settings2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { sendNotification } from '../utils/notifications';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function EnvironmentsView() {
-  const { environments, togglePlug, addEnvironment } = useEnvironmentStore();
+  const { environments, togglePlug, addEnvironment, updatePlugConfig } = useEnvironmentStore();
   const [showModal, setShowModal] = useState(false);
   const [newEnv, setNewEnv] = useState({ name: '', growMedium: GrowMedium.SOIL, lightHoursOn: 18, lightHoursOff: 6 });
+  const [selectedEnvForSettings, setSelectedEnvForSettings] = useState(null);
 
   const handleTestAlarm = async () => {
     await sendNotification('🚨 LIGHT LEAK ALARM', 'Lux sensor detected light during Dark Phase in Tent #1!', 'high');
@@ -44,60 +45,62 @@ export default function EnvironmentsView() {
         {environments.map(env => (
           <div key={env.id} className="glass-card">
             <div className="flex-between mb-4">
-              <h2 className="text-lg">{env.name}</h2>
-              <span className="text-xs text-muted" style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '12px' }}>
-                {env.growMedium}
-              </span>
-            </div>
-            
-            <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ flex: 1 }}>
-                <div className="flex-center mb-2" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                  <Sun size={16} className="text-warning" />
-                  <span className="text-sm">{env.lightHoursOn}h ON</span>
+              <div className="flex-center" style={{ gap: '0.75rem' }}>
+                <div style={{ padding: '0.75rem', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)' }}>
+                  <Database className="text-primary" size={24} />
                 </div>
-                <div style={{ height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(env.lightHoursOn / 24) * 100}%`, height: '100%', background: 'var(--warning)' }}></div>
+                <div>
+                  <h2 className="text-lg">{env.name}</h2>
+                  <p className="text-xs text-muted flex-center" style={{ justifyContent: 'flex-start', gap: '0.25rem' }}>
+                    <Sun size={12} /> {env.lightHoursOn}h ON <Moon size={12} className="ml-2" /> {env.lightHoursOff}h OFF
+                  </p>
                 </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div className="flex-center mb-2" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                  <Moon size={16} className="text-secondary" />
-                  <span className="text-sm">{env.lightHoursOff}h OFF</span>
-                </div>
-                <div style={{ height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${(env.lightHoursOff / 24) * 100}%`, height: '100%', background: 'var(--secondary)' }}></div>
-                </div>
-              </div>
+              <button className="btn btn-secondary" style={{ padding: '0.5rem', borderRadius: '50%' }} onClick={() => setSelectedEnvForSettings(env)}>
+                <Settings size={20} />
+              </button>
             </div>
 
-            <div className="mt-4">
-              <h4 className="text-sm font-semibold mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                <Power size={16} className="text-primary" /> Smart Plugs
-              </h4>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button 
-                  onClick={() => togglePlug(env.id, 'light')} 
-                  className="btn" 
-                  style={{ flex: 1, padding: '0.5rem', background: env.plugs.light ? 'var(--warning)' : 'var(--bg-glass)' }}
-                >
-                  <Sun size={16} /> Light
+            <div className="mb-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(80px, 1fr))', gap: '0.5rem' }}>
+              {env.plugConfig?.light?.enabled && (
+                <button onClick={() => togglePlug(env.id, 'light')} className="btn" style={{ 
+                  flexDirection: 'column', 
+                  padding: '1rem 0.5rem', 
+                  background: env.plugConfig.light.isOn ? 'var(--warning)' : 'rgba(255, 255, 255, 0.1)',
+                  border: env.plugConfig.light.isOn ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                  color: env.plugConfig.light.isOn ? '#000' : 'var(--text-main)',
+                  borderRadius: 'var(--radius-md)'
+                }}>
+                  <Power size={20} className="mb-2" />
+                  <span className="text-xs">Light</span>
                 </button>
-                <button 
-                  onClick={() => togglePlug(env.id, 'exhaust')} 
-                  className="btn" 
-                  style={{ flex: 1, padding: '0.5rem', background: env.plugs.exhaust ? 'var(--primary)' : 'var(--bg-glass)' }}
-                >
-                  <Wind size={16} /> Exhaust
+              )}
+              {env.plugConfig?.exhaust?.enabled && (
+                <button onClick={() => togglePlug(env.id, 'exhaust')} className="btn" style={{ 
+                  flexDirection: 'column', 
+                  padding: '1rem 0.5rem', 
+                  background: env.plugConfig.exhaust.isOn ? 'var(--info)' : 'rgba(255, 255, 255, 0.1)',
+                  border: env.plugConfig.exhaust.isOn ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                  color: env.plugConfig.exhaust.isOn ? '#000' : 'var(--text-main)',
+                  borderRadius: 'var(--radius-md)'
+                }}>
+                  <Wind size={20} className="mb-2" />
+                  <span className="text-xs">Exhaust</span>
                 </button>
-                <button 
-                  onClick={() => togglePlug(env.id, 'humidifier')} 
-                  className="btn" 
-                  style={{ flex: 1, padding: '0.5rem', background: env.plugs.humidifier ? 'var(--info)' : 'var(--bg-glass)' }}
-                >
-                  <Droplets size={16} /> Humidif.
+              )}
+              {env.plugConfig?.humidifier?.enabled && (
+                <button onClick={() => togglePlug(env.id, 'humidifier')} className="btn" style={{ 
+                  flexDirection: 'column', 
+                  padding: '1rem 0.5rem', 
+                  background: env.plugConfig.humidifier.isOn ? 'var(--primary)' : 'rgba(255, 255, 255, 0.1)',
+                  border: env.plugConfig.humidifier.isOn ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
+                  color: env.plugConfig.humidifier.isOn ? '#000' : 'var(--text-main)',
+                  borderRadius: 'var(--radius-md)'
+                }}>
+                  <Droplets size={20} className="mb-2" />
+                  <span className="text-xs">Humidifier</span>
                 </button>
-              </div>
+              )}
             </div>
 
             {env.history && env.history.length > 0 && (
@@ -174,6 +177,68 @@ export default function EnvironmentsView() {
               </div>
               <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Create Tent</button>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {selectedEnvForSettings && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex-between mb-6">
+              <h2>{selectedEnvForSettings.name} Settings</h2>
+              <button className="btn btn-secondary" onClick={() => setSelectedEnvForSettings(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <h3 className="text-md text-primary">Smart Plugs</h3>
+              
+              {['light', 'exhaust', 'humidifier'].map(plugKey => {
+                const config = selectedEnvForSettings.plugConfig[plugKey] || { enabled: false, entityId: '' };
+                return (
+                  <div key={plugKey} className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                    <div className="flex-between mb-3">
+                      <span className="font-semibold capitalize">{plugKey}</span>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <span className="text-xs text-muted">Enabled</span>
+                        <input 
+                          type="checkbox" 
+                          checked={config.enabled}
+                          onChange={(e) => {
+                            updatePlugConfig(selectedEnvForSettings.id, plugKey, { enabled: e.target.checked });
+                            setSelectedEnvForSettings(state => ({
+                              ...state, plugConfig: { ...state.plugConfig, [plugKey]: { ...config, enabled: e.target.checked } }
+                            }));
+                          }}
+                        />
+                      </label>
+                    </div>
+                    {config.enabled && (
+                      <div>
+                        <label className="text-xs text-muted mb-1 block">HA Entity ID</label>
+                        <input 
+                          type="text" 
+                          className="input-premium" 
+                          style={{ padding: '0.5rem', fontSize: '0.875rem' }}
+                          value={config.entityId} 
+                          onChange={(e) => {
+                            updatePlugConfig(selectedEnvForSettings.id, plugKey, { entityId: e.target.value });
+                            setSelectedEnvForSettings(state => ({
+                              ...state, plugConfig: { ...state.plugConfig, [plugKey]: { ...config, entityId: e.target.value } }
+                            }));
+                          }}
+                          placeholder={`e.g. switch.tent_${plugKey}`} 
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <button className="btn btn-primary mt-4" onClick={() => setSelectedEnvForSettings(null)}>Save & Close</button>
+            </div>
           </div>
         </div>,
         document.body
