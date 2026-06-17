@@ -1,5 +1,5 @@
 import useEnvironmentStore, { GrowMedium } from '../store/useEnvironmentStore';
-import { Settings, Sun, Moon, Database, Power, Wind, Droplets, BellRing, Plus, X } from 'lucide-react';
+import { Settings, Settings2, Sun, Moon, Database, Power, Wind, Droplets, BellRing, Plus, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { sendNotification } from '../utils/notifications';
 import { useState, useEffect } from 'react';
