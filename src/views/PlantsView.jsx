@@ -4,18 +4,21 @@ import usePlantStore, { PlantPhase, StrainType } from '../store/usePlantStore';
 import useGrowLogStore from '../store/useGrowLogStore';
 import useNutrientStore from '../store/useNutrientStore';
 import useEnvironmentStore from '../store/useEnvironmentStore';
-import { Plus, Droplet, Activity, X, Camera, Search } from 'lucide-react';
+import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2 } from 'lucide-react';
 import { differenceInDays, startOfDay } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function PlantsView() {
-  const { plants, addPlant } = usePlantStore();
+  const { plants, addPlant, updatePlant, toggleMoistureSensor } = usePlantStore();
   const { addLog } = useGrowLogStore();
   const { recipes } = useNutrientStore();
   const { environments } = useEnvironmentStore();
   
   const [selectedPlant, setSelectedPlant] = useState(null);
+  const [activeTab, setActiveTab] = useState('log');
   const [logForm, setLogForm] = useState({ waterVolume: 1.0, phInput: 6.2, ecInput: 1.2, recipeId: '' });
+  const [logImage, setLogImage] = useState(null);
+  const logImageInputRef = useRef(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPlant, setNewPlant] = useState({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null });
@@ -39,7 +42,14 @@ export default function PlantsView() {
       ecInput: logForm.ecInput,
       appliedRecipeId: logForm.recipeId
     });
+    
+    // Auto-update profile picture if a new photo was uploaded during log
+    if (logImage) {
+      updatePlant(selectedPlant.id, { image: logImage });
+    }
+    
     setSelectedPlant(null); // close modal
+    setLogImage(null);
   };
 
   const handleImageUpload = (e) => {
@@ -47,6 +57,15 @@ export default function PlantsView() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => setNewPlant({...newPlant, image: reader.result});
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleLogImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setLogImage(reader.result);
       reader.readAsDataURL(file);
     }
   };
@@ -83,7 +102,7 @@ export default function PlantsView() {
         {plants.map(plant => {
           const daysSinceGermination = differenceInDays(new Date(), new Date(plant.dateGerminated));
           return (
-            <div key={plant.id} className="glass-card interactive" onClick={() => setSelectedPlant(plant)} style={{ cursor: 'pointer' }}>
+            <div key={plant.id} className="glass-card interactive" onClick={() => { setSelectedPlant(plant); setActiveTab('log'); setLogImage(null); }} style={{ cursor: 'pointer' }}>
               <div style={{ width: '100%', height: '120px', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {plant.image ? (
                   <img src={plant.image} alt={plant.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -105,84 +124,164 @@ export default function PlantsView() {
       {selectedPlant && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="flex-between mb-6">
-              <h2>Log: {selectedPlant.name}</h2>
+            <div className="flex-between mb-4">
+              <h2>{selectedPlant.name}</h2>
               <button className="btn btn-secondary" onClick={() => setSelectedPlant(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
             </div>
             
-            <form onSubmit={handleLogSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div>
-                <label className="text-sm text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                  <Droplet size={16} className="text-info" /> Water Volume (Liters)
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <input type="range" min="0" max="5" step="0.1" value={logForm.waterVolume} onChange={(e) => setLogForm({...logForm, waterVolume: parseFloat(e.target.value)})} style={{ flex: 1 }} />
-                  <span className="font-semibold" style={{ width: '40px', textAlign: 'right' }}>{logForm.waterVolume}L</span>
+            <div className="flex-center mb-6" style={{ background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '12px', gap: '4px' }}>
+              <button className={`btn ${activeTab === 'log' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setActiveTab('log')}>
+                <FileText size={16} className="mr-2" /> Log
+              </button>
+              <button className={`btn ${activeTab === 'settings' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setActiveTab('settings')}>
+                <Settings size={16} className="mr-2" /> Settings
+              </button>
+              <button className={`btn ${activeTab === 'charts' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setActiveTab('charts')}>
+                <BarChart2 size={16} className="mr-2" /> Charts
+              </button>
+            </div>
+
+            {activeTab === 'log' && (
+              <form onSubmit={handleLogSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="flex-center" style={{ flexDirection: 'column', gap: '0.5rem' }}>
+                  <input type="file" accept="image/*" ref={logImageInputRef} onChange={handleLogImageUpload} style={{ display: 'none' }} />
+                  <div onClick={() => logImageInputRef.current.click()} style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}>
+                    {logImage ? <img src={logImage} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Camera size={24} className="text-muted" />}
+                  </div>
+                  <span className="text-xs text-muted">Quick Photo (updates profile)</span>
+                </div>
+
+                <div>
+                  <label className="text-sm text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
+                    <Droplet size={16} className="text-info" /> Water Volume (Liters)
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <input type="range" min="0" max="5" step="0.1" value={logForm.waterVolume} onChange={(e) => setLogForm({...logForm, waterVolume: parseFloat(e.target.value)})} style={{ flex: 1 }} />
+                    <span className="font-semibold" style={{ width: '40px', textAlign: 'right' }}>{logForm.waterVolume}L</span>
+                  </div>
+                </div>
+
+                {(selectedPlant.trackPH ?? true) && (
+                  <div>
+                    <label className="text-sm text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
+                      <Activity size={16} className="text-warning" /> pH Input
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <input type="range" min="4.0" max="8.0" step="0.1" value={logForm.phInput} onChange={(e) => setLogForm({...logForm, phInput: parseFloat(e.target.value)})} style={{ flex: 1 }} />
+                      <span className="font-semibold" style={{ width: '40px', textAlign: 'right' }}>{logForm.phInput}</span>
+                    </div>
+                  </div>
+                )}
+
+                {(selectedPlant.trackEC ?? true) && (
+                  <div>
+                    <label className="text-sm text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
+                      <Activity size={16} className="text-primary" /> EC Input
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <input type="range" min="0.0" max="3.0" step="0.1" value={logForm.ecInput} onChange={(e) => setLogForm({...logForm, ecInput: parseFloat(e.target.value)})} style={{ flex: 1 }} />
+                      <span className="font-semibold" style={{ width: '40px', textAlign: 'right' }}>{logForm.ecInput}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-sm text-muted mb-2">Nutrient Recipe</label>
+                  <select className="input-premium" value={logForm.recipeId} onChange={(e) => setLogForm({...logForm, recipeId: e.target.value})}>
+                    <option value="">None (Water only)</option>
+                    {recipes.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Save Log</button>
+              </form>
+            )}
+
+            {activeTab === 'settings' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                  <h3 className="text-md text-primary mb-3">General Profile</h3>
+                  <div className="mb-3">
+                    <label className="text-xs text-muted mb-1 block">Plant Name</label>
+                    <input type="text" className="input-premium" value={selectedPlant.name} onChange={(e) => updatePlant(selectedPlant.id, { name: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="text-xs text-muted mb-1 block">Strain Name</label>
+                    <input type="text" className="input-premium" value={selectedPlant.strainName} onChange={(e) => updatePlant(selectedPlant.id, { strainName: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted mb-1 block">Current Phase</label>
+                    <select className="input-premium" value={selectedPlant.currentPhase} onChange={(e) => updatePlant(selectedPlant.id, { currentPhase: e.target.value })}>
+                      {Object.values(PlantPhase).map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                  <h3 className="text-md text-primary mb-3">Tracking Features</h3>
+                  <div className="flex-between mb-3">
+                    <span className="text-sm font-semibold">Track EC</span>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={selectedPlant.trackEC ?? true} onChange={(e) => updatePlant(selectedPlant.id, { trackEC: e.target.checked })} />
+                    </label>
+                  </div>
+                  <div className="flex-between mb-3">
+                    <span className="text-sm font-semibold">Track pH</span>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={selectedPlant.trackPH ?? true} onChange={(e) => updatePlant(selectedPlant.id, { trackPH: e.target.checked })} />
+                    </label>
+                  </div>
+                  <div className="flex-between">
+                    <span className="text-sm font-semibold">Soil Sensor Installed</span>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={selectedPlant.hasSoilMoistureSensor} onChange={(e) => toggleMoistureSensor(selectedPlant.id, e.target.checked)} />
+                    </label>
+                  </div>
                 </div>
               </div>
+            )}
 
+            {activeTab === 'charts' && (
               <div>
-                <label className="text-sm text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                  <Activity size={16} className="text-warning" /> pH Input
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <input type="range" min="4.0" max="8.0" step="0.1" value={logForm.phInput} onChange={(e) => setLogForm({...logForm, phInput: parseFloat(e.target.value)})} style={{ flex: 1 }} />
-                  <span className="font-semibold" style={{ width: '40px', textAlign: 'right' }}>{logForm.phInput}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                  <Activity size={16} className="text-primary" /> EC Input
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <input type="range" min="0.0" max="3.0" step="0.1" value={logForm.ecInput} onChange={(e) => setLogForm({...logForm, ecInput: parseFloat(e.target.value)})} style={{ flex: 1 }} />
-                  <span className="font-semibold" style={{ width: '40px', textAlign: 'right' }}>{logForm.ecInput}</span>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm text-muted mb-2">Nutrient Recipe</label>
-                <select className="input-premium" value={logForm.recipeId} onChange={(e) => setLogForm({...logForm, recipeId: e.target.value})}>
-                  <option value="">None (Water only)</option>
-                  {recipes.map(r => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Save Log</button>
-            </form>
-
-            {selectedPlant.hasSoilMoistureSensor && selectedPlant.history && selectedPlant.history.length > 0 && (
-              <div className="mt-8 pt-6" style={{ borderTop: '1px solid var(--border)' }}>
-                <h3 className="mb-4 text-md flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                  <Activity size={18} className="text-primary" /> Soil Sensor History
-                </h3>
-                <div style={{ height: '180px', width: '100%' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={selectedPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                      <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} />
-                      <YAxis yAxisId="left" stroke="var(--info)" fontSize={10} />
-                      <YAxis yAxisId="right" orientation="right" stroke="var(--warning)" fontSize={10} />
-                      <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
-                      <Line yAxisId="left" type="monotone" dataKey="moisture" name="Moisture %" stroke="var(--info)" strokeWidth={2} dot={false} />
-                      <Line yAxisId="right" type="monotone" dataKey="temp" name="Soil Temp" stroke="var(--warning)" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <div style={{ height: '100px', width: '100%', marginTop: '1rem' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={selectedPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                      <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} hide />
-                      <YAxis stroke="var(--secondary)" fontSize={10} />
-                      <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
-                      <Line type="stepAfter" dataKey="lux" name="Lux (Light)" stroke="var(--secondary)" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
+                {!selectedPlant.hasSoilMoistureSensor && (
+                  <div className="text-center text-muted p-4">Soil sensor is disabled. Enable it in Settings to see charts.</div>
+                )}
+                {selectedPlant.hasSoilMoistureSensor && (!selectedPlant.history || selectedPlant.history.length === 0) && (
+                  <div className="text-center text-muted p-4">No sensor history available yet.</div>
+                )}
+                {selectedPlant.hasSoilMoistureSensor && selectedPlant.history && selectedPlant.history.length > 0 && (
+                  <div className="mt-2">
+                    <h3 className="mb-4 text-md flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
+                      <Activity size={18} className="text-primary" /> Sensor History
+                    </h3>
+                    <div style={{ height: '180px', width: '100%' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={selectedPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                          <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} />
+                          <YAxis yAxisId="left" stroke="var(--info)" fontSize={10} />
+                          <YAxis yAxisId="right" orientation="right" stroke="var(--warning)" fontSize={10} />
+                          <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                          <Line yAxisId="left" type="monotone" dataKey="moisture" name="Moisture %" stroke="var(--info)" strokeWidth={2} dot={false} />
+                          <Line yAxisId="right" type="monotone" dataKey="temp" name="Soil Temp" stroke="var(--warning)" strokeWidth={2} dot={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    <div style={{ height: '100px', width: '100%', marginTop: '1rem' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={selectedPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                          <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} hide />
+                          <YAxis stroke="var(--secondary)" fontSize={10} />
+                          <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                          <Line type="stepAfter" dataKey="lux" name="Lux (Light)" stroke="var(--secondary)" strokeWidth={2} dot={false} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

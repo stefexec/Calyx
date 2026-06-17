@@ -31,6 +31,8 @@ const usePlantStore = create(
           currentPhase: PlantPhase.VEGETATION,
           image: null,
           hasSoilMoistureSensor: true,
+          trackEC: true,
+          trackPH: true,
           currentMoistureLevel: 25, // 25% (Needs watering soon)
           history: Array.from({ length: 24 }).map((_, i) => ({
             time: `${i}:00`,
@@ -50,11 +52,13 @@ const usePlantStore = create(
           currentPhase: PlantPhase.FLOWERING,
           image: null,
           hasSoilMoistureSensor: false,
+          trackEC: true,
+          trackPH: true,
           currentMoistureLevel: null,
           history: []
         }
       ],
-      addPlant: (plant) => set((state) => ({ plants: [...state.plants, { ...plant, image: plant.image || null, hasSoilMoistureSensor: false, currentMoistureLevel: null, history: [] }] })),
+      addPlant: (plant) => set((state) => ({ plants: [...state.plants, { ...plant, image: plant.image || null, hasSoilMoistureSensor: false, trackEC: true, trackPH: true, currentMoistureLevel: null, history: [] }] })),
       updatePlant: (id, updatedPlant) => set((state) => ({
         plants: state.plants.map(p => p.id === id ? { ...p, ...updatedPlant } : p)
       })),
