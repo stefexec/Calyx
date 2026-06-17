@@ -178,8 +178,8 @@ export default function DashboardView() {
               </div>
 
               <div>
-                <label className="text-sm text-muted mb-2 block">Description</label>
-                <input type="text" className="input-premium" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} placeholder="e.g. LST Tie down" required />
+                <label className="text-sm text-muted mb-2 block">Description (Optional)</label>
+                <input type="text" className="input-premium" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} placeholder="e.g. LST Tie down" />
               </div>
 
               <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Schedule Event</button>
