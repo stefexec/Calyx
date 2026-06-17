@@ -29,6 +29,7 @@ const usePlantStore = create(
           dateGerminated: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
           dateFlippedToFlower: null,
           currentPhase: PlantPhase.VEGETATION,
+          image: null,
           hasSoilMoistureSensor: true,
           currentMoistureLevel: 25, // 25% (Needs watering soon)
           history: Array.from({ length: 24 }).map((_, i) => ({
@@ -47,12 +48,13 @@ const usePlantStore = create(
           dateGerminated: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
           dateFlippedToFlower: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
           currentPhase: PlantPhase.FLOWERING,
+          image: null,
           hasSoilMoistureSensor: false,
           currentMoistureLevel: null,
           history: []
         }
       ],
-      addPlant: (plant) => set((state) => ({ plants: [...state.plants, { ...plant, hasSoilMoistureSensor: false, currentMoistureLevel: null, history: [] }] })),
+      addPlant: (plant) => set((state) => ({ plants: [...state.plants, { ...plant, image: plant.image || null, hasSoilMoistureSensor: false, currentMoistureLevel: null, history: [] }] })),
       updatePlant: (id, updatedPlant) => set((state) => ({
         plants: state.plants.map(p => p.id === id ? { ...p, ...updatedPlant } : p)
       })),
