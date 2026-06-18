@@ -2,8 +2,8 @@ name: Build and Push Docker Images
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v*'
 
 env:
   REGISTRY: git.gurk.dev
