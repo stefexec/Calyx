@@ -6,7 +6,7 @@ import useGalleryStore from '../store/useGalleryStore';
 import useNutrientStore from '../store/useNutrientStore';
 import useEnvironmentStore from '../store/useEnvironmentStore';
 import { fetchApi } from '../utils/api';
-import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2, ArrowLeft, Sprout, MapPin, Clock, Zap, Bug, Scissors, Check, Trash2, Edit } from 'lucide-react';
+import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2, ArrowLeft, Sprout, MapPin, Clock, Zap, Bug, Scissors, Check, Trash2, Edit, Calendar, Tag } from 'lucide-react';
 import { differenceInDays, startOfDay } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -302,13 +302,25 @@ export default function PlantsView() {
             
             <div style={{ position: 'relative', height: '40vh', width: '100%', overflow: 'hidden', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' }}>
               <div 
+                onClick={() => {
+                  const url = getLatestPlantImage(currentPlant.id);
+                  if (url) {
+                    setFullScreenImage({
+                      url,
+                      title: currentPlant.name,
+                      phase: currentPlant.currentPhase,
+                      days: differenceInDays(new Date(), new Date(currentPlant.dateGerminated))
+                    });
+                  }
+                }}
                 style={{ 
                   position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                   backgroundImage: `url(${getLatestPlantImage(currentPlant.id) || ''})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   filter: getLatestPlantImage(currentPlant.id) ? 'none' : 'brightness(0.3)',
-                  backgroundColor: 'rgba(0,0,0,0.5)'
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  cursor: getLatestPlantImage(currentPlant.id) ? 'pointer' : 'default'
                 }}
               />
               <button 
@@ -929,12 +941,31 @@ export default function PlantsView() {
               <X size={24} />
             </button>
           </div>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem', paddingBottom: '2rem' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem' }}>
             <img 
-              src={fullScreenImage} 
+              src={fullScreenImage.url} 
               alt="Full size" 
-              style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: 'var(--radius-md)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} 
+              style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 'var(--radius-md)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} 
             />
+          </div>
+          <div style={{ padding: '2rem 1rem', background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)' }}>
+            <h2 className="text-lg mb-4">{fullScreenImage.title}</h2>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <div className="glass flex-center" style={{ padding: '4px 12px', borderRadius: 'var(--radius-full)', gap: '6px' }}>
+                <Calendar size={14} className="text-info" />
+                <span className="text-xs font-semibold">{new Date().toLocaleDateString()}</span>
+              </div>
+              <div className="glass flex-center" style={{ padding: '4px 12px', borderRadius: 'var(--radius-full)', gap: '6px' }}>
+                <Tag size={14} className="text-primary" />
+                <span className="text-xs font-semibold">Day {fullScreenImage.days}</span>
+              </div>
+              {fullScreenImage.phase && (
+                <div className="glass flex-center" style={{ padding: '4px 12px', borderRadius: 'var(--radius-full)', gap: '6px' }}>
+                  <Sprout size={14} className="text-accent" />
+                  <span className="text-xs font-semibold">{fullScreenImage.phase}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>,
         document.body
