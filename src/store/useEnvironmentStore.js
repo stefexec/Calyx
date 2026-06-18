@@ -17,24 +17,28 @@ const useEnvironmentStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const data = await fetchApi('/environments/');
+      const currentEnvs = get().environments;
       // Map backend model to frontend model where needed
-      const mapped = data.map(env => ({
-        id: env.id,
-        name: env.name,
-        growMedium: env.medium || GrowMedium.SOIL,
-        lightHoursOn: 18, // Legacy local prop (not in backend schema, defaulting)
-        lightHoursOff: 6,
-        homeAssistantSensors: env.ha_entity_ids || [],
-        tempSensor: env.ha_entity_ids ? env.ha_entity_ids[0] : '',
-        rhSensor: env.ha_entity_ids ? env.ha_entity_ids[1] : '',
-        luxSensor: env.ha_entity_ids ? env.ha_entity_ids[2] : '',
-        plugConfig: env.plug_config || {
-          light: { enabled: true, entityId: '', isOn: false },
-          exhaust: { enabled: true, entityId: '', isOn: false },
-          humidifier: { enabled: true, entityId: '', isOn: false }
-        },
-        history: [] 
-      }));
+      const mapped = data.map(env => {
+        const existing = currentEnvs.find(e => e.id === env.id);
+        return {
+          id: env.id,
+          name: env.name,
+          growMedium: env.medium || GrowMedium.SOIL,
+          lightHoursOn: 18, // Legacy local prop (not in backend schema, defaulting)
+          lightHoursOff: 6,
+          homeAssistantSensors: env.ha_entity_ids || [],
+          tempSensor: env.ha_entity_ids ? env.ha_entity_ids[0] : '',
+          rhSensor: env.ha_entity_ids ? env.ha_entity_ids[1] : '',
+          luxSensor: env.ha_entity_ids ? env.ha_entity_ids[2] : '',
+          plugConfig: existing && existing.plugConfig ? existing.plugConfig : (env.plug_config || {
+            light: { enabled: true, entityId: '', isOn: false },
+            exhaust: { enabled: true, entityId: '', isOn: false },
+            humidifier: { enabled: true, entityId: '', isOn: false }
+          }),
+          history: existing && existing.history ? existing.history : [] 
+        };
+      });
       set({ environments: mapped, isLoading: false });
     } catch (error) {
       set({ error: error.message, isLoading: false });

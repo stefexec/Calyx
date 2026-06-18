@@ -117,7 +117,7 @@ export default function EnvironmentsView() {
                 <Database size={14} /> Connected HA Entities
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                {(env.homeAssistantSensors || env.homeAssistantEntityIds || []).map(id => (
+                {(env.homeAssistantSensors || env.homeAssistantEntityIds || []).filter(id => id && id.trim() !== '').map(id => (
                   <span key={id} style={{ fontSize: '0.65rem', background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px', color: 'var(--primary)' }}>
                     {id}
                   </span>
