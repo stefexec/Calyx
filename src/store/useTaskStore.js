@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { addDays, startOfDay } from 'date-fns';
+import { fetchApi } from '../utils/api';
 
 export const TaskCategory = {
   WATERING: 'Watering',
@@ -12,41 +11,90 @@ export const TaskCategory = {
   OTHER: 'Other'
 };
 
-const useTaskStore = create(
-  persist(
-    (set, get) => ({
-      tasks: [
-        {
-          id: 't1',
-          date: startOfDay(new Date()).toISOString(),
-          plantId: 'p1',
-          category: TaskCategory.WATERING,
-          description: 'Water (1.5L) + BioBizz Week 3',
-          isCompleted: false
-        },
-        {
-          id: 't2',
-          date: startOfDay(addDays(new Date(), 3)).toISOString(),
-          plantId: 'p2',
-          category: TaskCategory.TRAINING,
-          description: 'Defoliation & LST Adjustments',
-          isCompleted: false
-        }
-      ],
-      addTask: (task) => set((state) => ({ 
-        tasks: [...state.tasks, { ...task, id: Date.now().toString(36) + Math.random().toString(36).substring(2), isCompleted: false }] 
-      })),
-      toggleTaskCompletion: (id) => set((state) => ({
-        tasks: state.tasks.map(t => t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)
-      })),
-      deleteTask: (id) => set((state) => ({
-        tasks: state.tasks.filter(t => t.id !== id)
-      })),
-    }),
-    {
-      name: 'calyx-task-storage',
+const useTaskStore = create((set, get) => ({
+  tasks: [],
+  isLoading: false,
+
+  fetchTasks: async () => {
+    set({ isLoading: true });
+    try {
+      const data = await fetchApi('/tasks/');
+      const mapped = data.map(task => ({
+        id: task.id,
+        date: task.date ? task.date + "Z" : new Date().toISOString(),
+        plantId: task.plant_id,
+        category: task.category,
+        description: task.description,
+        isCompleted: task.is_completed || false
+      }));
+      set({ tasks: mapped, isLoading: false });
+    } catch (error) {
+      console.error("Failed to fetch tasks", error);
+      set({ isLoading: false });
     }
-  )
-);
+  },
+
+  addTask: async (task) => {
+    try {
+      const payload = {
+        date: task.date ? new Date(task.date).toISOString().replace('Z', '') : null,
+        plant_id: task.plantId,
+        category: task.category,
+        description: task.description,
+        is_completed: task.isCompleted || false
+      };
+
+      const created = await fetchApi('/tasks/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      const newTask = {
+        id: created.id,
+        date: created.date ? created.date + "Z" : new Date().toISOString(),
+        plantId: created.plant_id,
+        category: created.category,
+        description: created.description,
+        isCompleted: created.is_completed || false
+      };
+
+      set((state) => ({ 
+        tasks: [...state.tasks, newTask]
+      }));
+    } catch (error) {
+      console.error("Failed to add task", error);
+    }
+  },
+
+  toggleTaskCompletion: async (id) => {
+    try {
+      const task = get().tasks.find(t => t.id === id);
+      if (!task) return;
+      
+      const newStatus = !task.isCompleted;
+      await fetchApi(`/tasks/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ is_completed: newStatus })
+      });
+
+      set((state) => ({
+        tasks: state.tasks.map(t => t.id === id ? { ...t, isCompleted: newStatus } : t)
+      }));
+    } catch (error) {
+      console.error("Failed to toggle task", error);
+    }
+  },
+
+  deleteTask: async (id) => {
+    try {
+      await fetchApi(`/tasks/${id}`, { method: 'DELETE' });
+      set((state) => ({
+        tasks: state.tasks.filter(t => t.id !== id)
+      }));
+    } catch (error) {
+      console.error("Failed to delete task", error);
+    }
+  }
+}));
 
 export default useTaskStore;

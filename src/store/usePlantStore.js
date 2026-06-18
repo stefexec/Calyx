@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { addDays } from 'date-fns';
+import { fetchApi } from '../utils/api';
 
 export const StrainType = {
   PHOTOPERIODIC: 'Photoperiodic',
@@ -16,63 +15,130 @@ export const PlantPhase = {
   HARVESTED: 'Harvested'
 };
 
-const usePlantStore = create(
-  persist(
-    (set, get) => ({
-      plants: [
-        {
-          id: 'p1',
-          environmentId: '1',
-          name: 'KES #1',
-          strainName: 'Super Lemon Haze',
-          strainType: StrainType.PHOTOPERIODIC,
-          dateGerminated: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
-          dateFlippedToFlower: null,
-          currentPhase: PlantPhase.VEGETATION,
-          image: null,
-          hasSoilMoistureSensor: true,
-          trackEC: true,
-          trackPH: true,
-          currentMoistureLevel: 25, // 25% (Needs watering soon)
-          history: Array.from({ length: 24 }).map((_, i) => ({
-            time: `${i}:00`,
-            moisture: 45 - i * 0.8,
-            temp: 22 + Math.sin(i / 3) * 1.5,
-            lux: i > 6 && i < 20 ? 40000 + Math.sin(i / 4) * 5000 : 0
-          }))
-        },
-        {
-          id: 'p2',
-          environmentId: '2',
-          name: 'KES #2',
-          strainName: 'Super Lemon Haze',
-          strainType: StrainType.PHOTOPERIODIC,
-          dateGerminated: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
-          dateFlippedToFlower: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-          currentPhase: PlantPhase.FLOWERING,
-          image: null,
-          hasSoilMoistureSensor: false,
-          trackEC: true,
-          trackPH: true,
-          currentMoistureLevel: null,
-          history: []
-        }
-      ],
-      addPlant: (plant) => set((state) => ({ plants: [...state.plants, { ...plant, image: plant.image || null, hasSoilMoistureSensor: false, trackEC: true, trackPH: true, currentMoistureLevel: null, history: [] }] })),
-      updatePlant: (id, updatedPlant) => set((state) => ({
-        plants: state.plants.map(p => p.id === id ? { ...p, ...updatedPlant } : p)
-      })),
-      toggleMoistureSensor: (id, isEnabled) => set((state) => ({
-        plants: state.plants.map(p => p.id === id ? { ...p, hasSoilMoistureSensor: isEnabled, currentMoistureLevel: isEnabled ? 50 : null, history: isEnabled ? [] : [] } : p)
-      })),
-      deletePlant: (id) => set((state) => ({
-        plants: state.plants.filter(p => p.id !== id)
-      })),
-    }),
-    {
-      name: 'calyx-plant-storage',
+const usePlantStore = create((set, get) => ({
+  plants: [],
+  isLoading: false,
+
+  fetchPlants: async () => {
+    set({ isLoading: true });
+    try {
+      const data = await fetchApi('/plants/');
+      const mapped = data.map(plant => ({
+        id: plant.id,
+        environmentId: plant.environment_id,
+        name: plant.name,
+        strainName: plant.strain || '',
+        strainType: plant.type || StrainType.PHOTOPERIODIC,
+        dateGerminated: plant.date_germinated ? plant.date_germinated + "Z" : null,
+        dateFlippedToFlower: plant.date_flipped ? plant.date_flipped + "Z" : null,
+        currentPhase: plant.current_phase || PlantPhase.GERMINATION,
+        hasSoilMoistureSensor: plant.has_soil_moisture_sensor || false,
+        trackEC: true, // Default local settings
+        trackPH: true,
+        currentMoistureLevel: null,
+        history: [], // Local mock history for charts
+        image: null // Wait for gallery fetch to display profile
+      }));
+      set({ plants: mapped, isLoading: false });
+    } catch (error) {
+      console.error("Failed to fetch plants", error);
+      set({ isLoading: false });
     }
-  )
-);
+  },
+
+  addPlant: async (plant) => {
+    try {
+      const payload = {
+        environment_id: plant.environmentId,
+        name: plant.name,
+        strain: plant.strainName,
+        type: plant.strainType,
+        current_phase: plant.currentPhase,
+        date_germinated: plant.dateGerminated ? new Date(plant.dateGerminated).toISOString().replace('Z', '') : null,
+        has_soil_moisture_sensor: plant.hasSoilMoistureSensor || false
+      };
+      
+      const created = await fetchApi('/plants/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      const newPlant = {
+        id: created.id,
+        environmentId: created.environment_id,
+        name: created.name,
+        strainName: created.strain || '',
+        strainType: created.type || StrainType.PHOTOPERIODIC,
+        dateGerminated: created.date_germinated ? created.date_germinated + "Z" : null,
+        dateFlippedToFlower: created.date_flipped ? created.date_flipped + "Z" : null,
+        currentPhase: created.current_phase || PlantPhase.GERMINATION,
+        hasSoilMoistureSensor: created.has_soil_moisture_sensor || false,
+        trackEC: true,
+        trackPH: true,
+        currentMoistureLevel: null,
+        history: [],
+        image: plant.image || null
+      };
+
+      set((state) => ({ plants: [...state.plants, newPlant] }));
+      return newPlant;
+    } catch (error) {
+      console.error("Failed to add plant", error);
+    }
+  },
+
+  updatePlant: async (id, updatedPlant) => {
+    set((state) => ({
+      plants: state.plants.map(p => p.id === id ? { ...p, ...updatedPlant } : p)
+    }));
+    try {
+      // Create partial payload mapped to backend schema
+      const payload = {};
+      if (updatedPlant.environmentId !== undefined) payload.environment_id = updatedPlant.environmentId;
+      if (updatedPlant.name !== undefined) payload.name = updatedPlant.name;
+      if (updatedPlant.strainName !== undefined) payload.strain = updatedPlant.strainName;
+      if (updatedPlant.strainType !== undefined) payload.type = updatedPlant.strainType;
+      if (updatedPlant.currentPhase !== undefined) payload.current_phase = updatedPlant.currentPhase;
+      if (updatedPlant.dateGerminated !== undefined) payload.date_germinated = updatedPlant.dateGerminated ? new Date(updatedPlant.dateGerminated).toISOString().replace('Z', '') : null;
+      if (updatedPlant.dateFlippedToFlower !== undefined) payload.date_flipped = updatedPlant.dateFlippedToFlower ? new Date(updatedPlant.dateFlippedToFlower).toISOString().replace('Z', '') : null;
+      if (updatedPlant.hasSoilMoistureSensor !== undefined) payload.has_soil_moisture_sensor = updatedPlant.hasSoilMoistureSensor;
+
+      // Only send PUT if there are backend fields to update
+      if (Object.keys(payload).length > 0) {
+        await fetchApi(`/plants/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload)
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update plant", error);
+    }
+  },
+
+  toggleMoistureSensor: async (id, isEnabled) => {
+    set((state) => ({
+      plants: state.plants.map(p => p.id === id ? { ...p, hasSoilMoistureSensor: isEnabled, currentMoistureLevel: isEnabled ? 50 : null, history: isEnabled ? [] : [] } : p)
+    }));
+    try {
+      await fetchApi(`/plants/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ has_soil_moisture_sensor: isEnabled })
+      });
+    } catch (error) {
+      console.error("Failed to toggle sensor", error);
+    }
+  },
+
+  deletePlant: async (id) => {
+    try {
+      await fetchApi(`/plants/${id}`, { method: 'DELETE' });
+      set((state) => ({
+        plants: state.plants.filter(p => p.id !== id)
+      }));
+    } catch (error) {
+      console.error("Failed to delete plant", error);
+    }
+  }
+}));
 
 export default usePlantStore;

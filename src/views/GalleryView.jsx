@@ -2,13 +2,19 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Calendar as CalendarIcon, Tag, Sprout } from 'lucide-react';
 import useGalleryStore from '../store/useGalleryStore';
+import usePlantStore from '../store/usePlantStore';
 
 export default function GalleryView() {
   const { images } = useGalleryStore();
+  const { plants } = usePlantStore();
   const [selectedImage, setSelectedImage] = useState(null);
 
   // Sort images by timestamp descending (newest first)
   const sortedImages = [...images].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  const getPlantName = (plantId) => {
+    return plants.find(p => p.id === plantId)?.name || 'Unknown Plant';
+  };
 
   return (
     <div className="page-container">
@@ -40,8 +46,8 @@ export default function GalleryView() {
               }}
             >
               <img 
-                src={img.imageBase64} 
-                alt={img.plantName} 
+                src={img.fileUrl} 
+                alt={getPlantName(img.plantId)} 
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
             </div>
@@ -67,14 +73,14 @@ export default function GalleryView() {
           
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem' }}>
             <img 
-              src={selectedImage.imageBase64} 
+              src={selectedImage.fileUrl} 
               alt="Full size" 
               style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 'var(--radius-md)' }} 
             />
           </div>
 
           <div style={{ padding: '2rem 1rem', background: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)' }}>
-            <h2 className="text-lg mb-4">{selectedImage.plantName || 'Unknown Plant'}</h2>
+            <h2 className="text-lg mb-4">{getPlantName(selectedImage.plantId)}</h2>
             
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
               <div className="glass flex-center" style={{ padding: '4px 12px', borderRadius: 'var(--radius-full)', gap: '6px' }}>

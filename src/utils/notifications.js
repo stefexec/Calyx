@@ -1,31 +1,10 @@
-import { LocalNotifications } from '@capacitor/local-notifications';
 import useSettingsStore from '../store/useSettingsStore';
 
 export async function sendNotification(title, message, priority = 'default') {
-  // 1. Android Native Notification (Capacitor)
-  try {
-    const permStatus = await LocalNotifications.requestPermissions();
-    if (permStatus.display === 'granted') {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            title: title,
-            body: message,
-            id: new Date().getTime(),
-            schedule: { at: new Date(Date.now() + 1000) },
-            sound: null,
-            attachments: null,
-            actionTypeId: '',
-            extra: null
-          }
-        ]
-      });
-    }
-  } catch (error) {
-    console.warn('Local Notifications failed (likely running in web browser without Capacitor context):', error);
-  }
-
-// 2. ntfy HTTP Push Notification
+  // We completely removed Capacitor's LocalNotifications here 
+  // because it was sending unwanted desktop/browser popups.
+  
+  // ntfy HTTP Push Notification
   try {
     let ntfyPriority = '3'; // default
     if (priority === 'high') ntfyPriority = '5';
@@ -45,17 +24,25 @@ export async function sendNotification(title, message, priority = 'default') {
       'Title': title,
       'Priority': ntfyPriority,
       'Tags': 'warning,leaves',
+      'Content-Type': 'text/plain' // Explicitly set content type
     };
 
-    if (ntfyToken) {
+    if (ntfyToken && ntfyToken.trim() !== '') {
+      // Basic auth or Bearer auth depending on what the user's ntfy setup is
+      // Ntfy usually uses Bearer for access tokens, but some use Basic. 
+      // We will default to Bearer as standard for ntfy tokens.
       headers['Authorization'] = `Bearer ${ntfyToken}`;
     }
 
-    await fetch(`${baseUrl}/${ntfyTopic}`, {
+    const response = await fetch(`${baseUrl}/${ntfyTopic}`, {
       method: 'POST',
       body: message,
       headers: headers
     });
+    
+    if (!response.ok) {
+      console.error('Ntfy push failed with status:', response.status);
+    }
   } catch (error) {
     console.error('Failed to send ntfy alert:', error);
   }

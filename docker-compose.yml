@@ -1,0 +1,13 @@
+services:
+  calyx-backend:
+    build: ./backend
+    container_name: calyx-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+    environment:
+      - DATABASE_URL=sqlite:////app/data/calyx.db
+      - ENVIRONMENT=production

@@ -11,8 +11,8 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 
 export default function PlantsView() {
   const { plants, addPlant, updatePlant, toggleMoistureSensor } = usePlantStore();
-  const { logs, addLog } = useGrowLogStore();
-  const { addGalleryImage } = useGalleryStore();
+  const { logs, addLog, fetchLogsForPlant } = useGrowLogStore();
+  const { images, addGalleryImage } = useGalleryStore();
   const { recipes } = useNutrientStore();
   const { environments } = useEnvironmentStore();
   
@@ -21,10 +21,11 @@ export default function PlantsView() {
   const [historyTab, setHistoryTab] = useState('actions');
   const [logForm, setLogForm] = useState({ waterVolume: 1.0, phInput: 6.2, ecInput: 1.2, recipeId: '' });
   const [logImage, setLogImage] = useState(null);
+  const [logImageFile, setLogImageFile] = useState(null);
   const logImageInputRef = useRef(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newPlant, setNewPlant] = useState({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null });
+  const [newPlant, setNewPlant] = useState({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null, imageFile: null });
   const [strainQuery, setStrainQuery] = useState('');
   const fileInputRef = useRef(null);
 
@@ -36,11 +37,19 @@ export default function PlantsView() {
 
   const currentPlant = selectedPlant ? plants.find(p => p.id === selectedPlant.id) || selectedPlant : null;
 
-  const handleLogSubmit = (e) => {
+  const handleSelectPlant = (plant) => {
+    setSelectedPlant(plant);
+    setActiveTab('log');
+    setLogImage(null);
+    setLogImageFile(null);
+    fetchLogsForPlant(plant.id);
+  };
+
+  const handleLogSubmit = async (e) => {
     e.preventDefault();
     if (!currentPlant) return;
     
-    addLog({
+    await addLog({
       plantId: currentPlant.id,
       waterVolumeLiters: logForm.waterVolume,
       phInput: (currentPlant.trackPH ?? true) ? logForm.phInput : null,
@@ -48,27 +57,23 @@ export default function PlantsView() {
       appliedRecipeId: logForm.recipeId
     });
     
-    // Auto-update profile picture if a new photo was uploaded during log
-    if (logImage) {
-      updatePlant(currentPlant.id, { image: logImage });
-      
+    if (logImageFile) {
       let days = 0;
       if (currentPlant.dateGerminated) {
         days = Math.floor((new Date() - new Date(currentPlant.dateGerminated)) / (1000 * 60 * 60 * 24));
       }
 
-      addGalleryImage({
-        imageBase64: logImage,
+      await addGalleryImage({
         plantId: currentPlant.id,
-        plantName: currentPlant.name,
         phase: currentPlant.currentPhase,
         daysSinceGermination: days
-      });
+      }, logImageFile);
     }
     
-    setActiveTab('charts'); // switch to history tab so they see it
-    setHistoryTab('actions'); // switch to actions sub-tab
+    setActiveTab('charts');
+    setHistoryTab('actions');
     setLogImage(null);
+    setLogImageFile(null);
   };
 
   const plantLogs = currentPlant ? logs.filter(l => l.plantId === currentPlant.id) : [];
@@ -76,8 +81,9 @@ export default function PlantsView() {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setNewPlant({...newPlant, imageFile: file});
       const reader = new FileReader();
-      reader.onloadend = () => setNewPlant({...newPlant, image: reader.result});
+      reader.onloadend = () => setNewPlant({...newPlant, image: reader.result, imageFile: file});
       reader.readAsDataURL(file);
     }
   };
@@ -85,6 +91,7 @@ export default function PlantsView() {
   const handleLogImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setLogImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setLogImage(reader.result);
       reader.readAsDataURL(file);
@@ -96,18 +103,31 @@ export default function PlantsView() {
     setStrainQuery(strain.name);
   };
 
-  const handleAddPlant = (e) => {
+  const handleAddPlant = async (e) => {
     e.preventDefault();
-    addPlant({
-      id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+    const createdPlant = await addPlant({
       ...newPlant,
       dateGerminated: startOfDay(new Date()).toISOString(),
       dateFlippedToFlower: null,
       currentPhase: PlantPhase.SEEDLING
     });
+
+    if (createdPlant && newPlant.imageFile) {
+      await addGalleryImage({
+        plantId: createdPlant.id,
+        phase: PlantPhase.SEEDLING,
+        daysSinceGermination: 0
+      }, newPlant.imageFile);
+    }
+
     setShowAddModal(false);
-    setNewPlant({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null });
+    setNewPlant({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null, imageFile: null });
     setStrainQuery('');
+  };
+
+  // Helper to get latest image
+  const getLatestPlantImage = (plantId) => {
+    return images.find(img => img.plantId === plantId)?.fileUrl;
   };
 
   return (
@@ -122,11 +142,12 @@ export default function PlantsView() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: '1rem' }}>
         {plants.map(plant => {
           const daysSinceGermination = differenceInDays(new Date(), new Date(plant.dateGerminated));
+          const latestImg = getLatestPlantImage(plant.id);
           return (
-            <div key={plant.id} className="glass-card interactive" onClick={() => { setSelectedPlant(plant); setActiveTab('log'); setLogImage(null); }} style={{ cursor: 'pointer' }}>
+            <div key={plant.id} className="glass-card interactive" onClick={() => handleSelectPlant(plant)} style={{ cursor: 'pointer' }}>
               <div style={{ width: '100%', height: '120px', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                {plant.image ? (
-                  <img src={plant.image} alt={plant.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {latestImg ? (
+                  <img src={latestImg} alt={plant.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <span style={{ fontSize: '3rem' }}>🪴</span>
                 )}

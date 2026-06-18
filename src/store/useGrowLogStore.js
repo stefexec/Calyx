@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { fetchApi } from '../utils/api';
 
 export const TrainingAction = {
   TOPPING: 'Topping',
@@ -9,23 +9,77 @@ export const TrainingAction = {
   REPOTTING: 'Repotting'
 };
 
-const useGrowLogStore = create(
-  persist(
-    (set, get) => ({
-      logs: [],
-      addLog: (log) => set((state) => ({ 
-        logs: [{
-          id: Date.now().toString(36) + Math.random().toString(36).substring(2),
-          timestamp: new Date().toISOString(),
-          ...log
-        }, ...state.logs] 
-      })),
-      deleteLog: (id) => set((state) => ({ logs: state.logs.filter(l => l.id !== id) })),
-    }),
-    {
-      name: 'calyx-growlog-storage',
+const useGrowLogStore = create((set, get) => ({
+  logs: [],
+  isLoading: false,
+
+  fetchLogsForPlant: async (plantId) => {
+    set({ isLoading: true });
+    try {
+      const data = await fetchApi(`/logs/plant/${plantId}`);
+      const mapped = data.map(log => ({
+        id: log.id,
+        plantId: log.plant_id,
+        timestamp: log.timestamp ? log.timestamp + "Z" : new Date().toISOString(),
+        waterVolumeLiters: log.water_amount,
+        ecInput: log.ec,
+        phInput: log.ph,
+        notes: log.notes
+      }));
+      
+      set((state) => {
+        // Remove existing logs for this plant, then append new ones
+        const otherLogs = state.logs.filter(l => l.plantId !== plantId);
+        return { logs: [...otherLogs, ...mapped], isLoading: false };
+      });
+    } catch (error) {
+      console.error("Failed to fetch logs", error);
+      set({ isLoading: false });
     }
-  )
-);
+  },
+
+  addLog: async (log) => {
+    try {
+      const payload = {
+        plant_id: log.plantId,
+        water_amount: log.waterVolumeLiters,
+        ec: log.ecInput,
+        ph: log.phInput,
+        notes: log.notes || log.appliedRecipeId ? `Recipe ID: ${log.appliedRecipeId}` : null
+      };
+
+      const created = await fetchApi('/logs/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+
+      const newLog = {
+        id: created.id,
+        plantId: created.plant_id,
+        timestamp: created.timestamp ? created.timestamp + "Z" : new Date().toISOString(),
+        waterVolumeLiters: created.water_amount,
+        ecInput: created.ec,
+        phInput: created.ph,
+        notes: created.notes,
+        appliedRecipeId: log.appliedRecipeId
+      };
+
+      set((state) => ({ 
+        logs: [newLog, ...state.logs].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      }));
+    } catch (error) {
+      console.error("Failed to add log", error);
+    }
+  },
+
+  deleteLog: async (id) => {
+    try {
+      await fetchApi(`/logs/${id}`, { method: 'DELETE' });
+      set((state) => ({ logs: state.logs.filter(l => l.id !== id) }));
+    } catch (error) {
+      console.error("Failed to delete log", error);
+    }
+  }
+}));
 
 export default useGrowLogStore;

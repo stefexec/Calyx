@@ -2,19 +2,16 @@ import useEnvironmentStore, { GrowMedium } from '../store/useEnvironmentStore';
 import { Settings, Settings2, Sun, Moon, Database, Power, Wind, Droplets, BellRing, Plus, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { sendNotification } from '../utils/notifications';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function EnvironmentsView() {
-  const { environments, togglePlug, addEnvironment, updatePlugConfig, migrateLegacy, updateEnvironment } = useEnvironmentStore();
+  const { environments, togglePlug, addEnvironment, updatePlugConfig, updateEnvironment } = useEnvironmentStore();
   const [showModal, setShowModal] = useState(false);
   const [newEnv, setNewEnv] = useState({ name: '', growMedium: GrowMedium.SOIL, lightHoursOn: 18, lightHoursOff: 6 });
   const [selectedEnvForSettings, setSelectedEnvForSettings] = useState(null);
 
-  useEffect(() => {
-    // Run one-time migration to ensure plugConfig exists
-    migrateLegacy();
-  }, [migrateLegacy]);
+
 
   const handleTestAlarm = async () => {
     await sendNotification('🚨 LIGHT LEAK ALARM', 'Lux sensor detected light during Dark Phase in Tent #1!', 'high');
