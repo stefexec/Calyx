@@ -56,7 +56,7 @@ export default function PlantsView() {
       waterVolumeLiters: (action.actionType === 'water' || action.actionType === 'nutrients') ? (action.waterVolumeLiters || 0) : null,
       ecInput: action.actionType === 'nutrients' ? (action.ecInput || null) : null,
       phInput: action.actionType === 'nutrients' ? (action.phInput || null) : null,
-      notes: action.notes || action.label,
+      notes: action.label + '|~|' + (action.notes || ''),
       appliedRecipeId: action.actionType === 'nutrients' ? (action.recipeId || null) : null,
       recipeScale: 100
     });
@@ -708,7 +708,11 @@ export default function PlantsView() {
                                 {log.waterVolumeLiters > 0 && <span className="text-xs font-semibold text-info">{log.waterVolumeLiters}L Water</span>}
                               </div>
                               <div className="flex-between">
-                                <span className="text-sm">{log.waterVolumeLiters > 0 ? 'Watering / Feed' : (log.notes || 'Aktion')}</span>
+                                <span className="text-sm">
+                                  {log.notes && log.notes.includes('|~|') 
+                                    ? log.notes.split('|~|')[0] 
+                                    : (log.waterVolumeLiters > 0 ? 'Watering / Feed' : (log.notes || 'Aktion'))}
+                                </span>
                                 <span className="text-xs">
                                   {log.phInput != null && `pH: ${log.phInput}`}
                                   {log.phInput != null && log.ecInput != null && ' | '}
@@ -843,7 +847,7 @@ export default function PlantsView() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="flex-between mb-6">
-              <h2>Action Log Details</h2>
+              <h2>{selectedLog.notes && selectedLog.notes.includes('|~|') ? selectedLog.notes.split('|~|')[0] : 'Action Log Details'}</h2>
               <button className="btn btn-secondary" onClick={() => setSelectedLog(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
             </div>
             
@@ -899,10 +903,10 @@ export default function PlantsView() {
               </div>
             )}
 
-            {selectedLog.notes && (
+            {selectedLog.notes && (selectedLog.notes.includes('|~|') ? selectedLog.notes.split('|~|')[1] : selectedLog.notes).trim() !== '' && (
               <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
                 <h3 className="text-sm text-primary mb-2">Notes</h3>
-                <p className="text-sm whitespace-pre-wrap">{selectedLog.notes}</p>
+                <p className="text-sm whitespace-pre-wrap">{selectedLog.notes.includes('|~|') ? selectedLog.notes.split('|~|')[1] : selectedLog.notes}</p>
               </div>
             )}
           </div>
