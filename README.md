@@ -23,11 +23,11 @@ The application queries the Home Assistant REST API to display temperature, rela
 
 ## Plant and tent management
 
-Users define physical grow tents and assign plants to them. The application references an offline database of 30,000 strains. When a user logs a plant, an automatic calculator uses the strain genetics to determine the optimal harvest window. Growers document visual progress by capturing and attaching photos to individual plant records.
+Users define physical grow tents and assign plants to them. The application references an offline database of 30,000 strains. When a user logs a plant, an automatic calculator uses the strain genetics to determine the optimal harvest window. Growers capture and view chronological photos in a full-screen gallery overlay, which renders the days since germination and current growth phase on the image. The gallery interface provides controls to delete individual photos.
 
 ## Feeding and scheduling
 
-The calendar interface renders a 61-day window. Users record precise watering events, nutrition applications, and plant training tasks. The application provides a nutrient solution recipe database to store and replicate feeding mixtures. A soil moisture reading below 30% places a watering indicator on the calendar.
+The application provides a nutrient solution recipe database to store feeding mixtures. Users assign custom quick actions, such as pruning or nutrient application, to individual plants. Tapping a nutrient action automatically attaches a specific recipe and liquid volume to the plant's history. The log interface formats each entry based on its action type, displaying only the exact variables (pH, EC, recipe scale, or text notes) recorded during the task. A soil moisture reading below 30% places a watering indicator on the calendar.
 
 ## Architecture
 
