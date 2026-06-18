@@ -66,3 +66,12 @@ Build and run the container:
 docker build -t calyx .
 docker run -d -p 8080:80 calyx
 ```
+
+### Docker Compose
+
+The repository includes a `docker-compose.yml` configuration to deploy the frontend and backend services together. The configuration maps local directories for the SQLite database and image uploads to ensure data persists across container restarts.
+
+Run the stack:
+```bash
+docker-compose up -d
+```

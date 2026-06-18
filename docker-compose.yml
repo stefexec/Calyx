@@ -1,10 +1,8 @@
 services:
   calyx-backend:
-    build: ./backend
+    image: git.gurk.dev/gurk/calyx-backend:latest
     container_name: calyx-backend
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     volumes:
       - ./data:/app/data
       - ./uploads:/app/uploads
@@ -13,10 +11,10 @@ services:
       - ENVIRONMENT=production
 
   calyx-frontend:
-    build: .
+    image: git.gurk.dev/gurk/calyx-frontend:latest
     container_name: calyx-frontend
     restart: unless-stopped
     ports:
-      - "3001:80"
+      - "8080:80"
     depends_on:
       - calyx-backend
