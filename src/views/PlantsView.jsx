@@ -6,7 +6,7 @@ import useGalleryStore from '../store/useGalleryStore';
 import useNutrientStore from '../store/useNutrientStore';
 import useEnvironmentStore from '../store/useEnvironmentStore';
 import { fetchApi } from '../utils/api';
-import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2 } from 'lucide-react';
+import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2, ArrowLeft, Sprout, MapPin, Clock, Zap, Bug, Scissors } from 'lucide-react';
 import { differenceInDays, startOfDay } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -232,43 +232,115 @@ export default function PlantsView() {
       </div>
 
       {selectedPlant && createPortal(
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="flex-between mb-4" style={{ alignItems: 'flex-start' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                {getLatestPlantImage(currentPlant.id) ? (
-                  <div 
-                    onClick={() => setFullScreenImage(getLatestPlantImage(currentPlant.id))}
-                    style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', border: '2px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
-                    className="hover-opacity"
-                  >
-                    <img src={getLatestPlantImage(currentPlant.id)} alt={currentPlant.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                ) : (
-                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--border)' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🪴</span>
-                  </div>
-                )}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <h2 style={{ margin: 0, fontSize: '1.5rem', lineHeight: 1.2 }}>{currentPlant.name}</h2>
-                  <span className="text-xs text-muted font-semibold">{currentPlant.strainName || 'Unknown Strain'}</span>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg-default)', zIndex: 1000, overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: '100%', maxWidth: '500px', minHeight: '100%', position: 'relative', background: 'var(--bg-default)', boxShadow: '0 0 40px rgba(0,0,0,0.5)', paddingBottom: '3rem' }}>
+            
+            <div style={{ position: 'relative', height: '40vh', width: '100%', overflow: 'hidden', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' }}>
+              <div 
+                style={{ 
+                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                  backgroundImage: `url(${getLatestPlantImage(currentPlant.id) || ''})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  filter: getLatestPlantImage(currentPlant.id) ? 'none' : 'brightness(0.3)',
+                  backgroundColor: 'rgba(0,0,0,0.5)'
+                }}
+              />
+              <button 
+                className="btn" 
+                onClick={() => setSelectedPlant(null)} 
+                style={{ position: 'absolute', top: '1rem', left: '1rem', padding: '0.5rem', borderRadius: '50%', zIndex: 10, background: 'rgba(0,0,0,0.3)', border: 'none', color: '#fff', backdropFilter: 'blur(5px)' }}
+              >
+                <ArrowLeft size={24} />
+              </button>
+              
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '3rem 1.5rem 1.5rem', background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%)' }}>
+                <h2 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0', color: '#fff', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>{currentPlant.name}</h2>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span style={{ background: 'var(--info)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                    {currentPlant.currentPhase}
+                  </span>
+                  {currentPlant.strainName && (
+                    <span style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <Sprout size={12} /> {currentPlant.strainName}
+                    </span>
+                  )}
+                  {currentPlant.environmentId && environments.find(e => e.id === currentPlant.environmentId) && (
+                    <span style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <MapPin size={12} /> {environments.find(e => e.id === currentPlant.environmentId).name}
+                    </span>
+                  )}
+                  <span style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <Clock size={12} /> Day {differenceInDays(new Date(), new Date(currentPlant.dateGerminated))}
+                  </span>
                 </div>
               </div>
-              <button className="btn btn-secondary" onClick={() => setSelectedPlant(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
-            </div>
-            
-            <div className="flex-center mb-6" style={{ background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '12px', gap: '4px' }}>
-              <button className={`btn ${activeTab === 'log' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setActiveTab('log')}>
-                <FileText size={16} className="mr-2" /> Log
-              </button>
-              <button className={`btn ${activeTab === 'settings' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setActiveTab('settings')}>
-                <Settings size={16} className="mr-2" /> Settings
-              </button>
-              <button className={`btn ${activeTab === 'charts' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setActiveTab('charts')}>
-                <BarChart2 size={16} className="mr-2" /> History
-              </button>
             </div>
 
+            <div style={{ padding: '1rem 1.5rem' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div className="flex-between text-xs text-info mb-3 font-semibold" style={{ letterSpacing: '0.05em' }}>
+                  <span>{new Date().toLocaleString('default', { month: 'short', year: 'numeric' }).toUpperCase()}</span>
+                  <span>DAY {differenceInDays(new Date(), new Date(currentPlant.dateGerminated))}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  {Array.from({length: 7}).map((_, i) => {
+                    const d = new Date();
+                    d.setDate(d.getDate() - d.getDay() + i + 1);
+                    const isToday = d.getDate() === new Date().getDate();
+                    return (
+                      <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', opacity: isToday ? 1 : 0.5 }}>
+                        <span className="text-xs">{d.toLocaleString('default', { weekday: 'short' }).substring(0, 2)}</span>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: isToday ? 'var(--primary)' : 'transparent', color: isToday ? '#fff' : 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                          {d.getDate()}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '16px', background: 'var(--bg-glass)', position: 'relative' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', opacity: activeTab === 'log' ? 1 : 0.6, color: activeTab === 'log' ? 'var(--success)' : 'inherit' }}>
+                    <Zap size={24} />
+                    <span className="text-xs font-semibold">Aktion</span>
+                  </div>
+                  <div onClick={() => setActiveTab('charts')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', opacity: activeTab === 'charts' ? 1 : 0.6, color: activeTab === 'charts' ? 'var(--info)' : 'inherit' }}>
+                    <BarChart2 size={24} />
+                    <span className="text-xs font-semibold">Pflanzenlog</span>
+                  </div>
+                  <div onClick={() => setActiveTab('settings')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', opacity: activeTab === 'settings' ? 1 : 0.6, color: activeTab === 'settings' ? 'var(--warning)' : 'inherit' }}>
+                    <Settings size={24} />
+                    <span className="text-xs font-semibold">Mehr</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', borderRadius: '16px', background: 'var(--bg-glass)' }}>
+                <div className="text-xs text-muted mb-4 font-semibold tracking-wider">SOFORTMAßNAHMEN</div>
+                <div style={{ display: 'flex', justifyContent: 'space-around' }}>
+                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <Droplet size={28} className="text-info" />
+                    <span className="text-xs">Wasser</span>
+                  </div>
+                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <FileText size={28} className="text-success" />
+                    <span className="text-xs">Nährstoffe</span>
+                  </div>
+                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <Bug size={28} className="text-warning" />
+                    <span className="text-xs">Abwehrmittel</span>
+                  </div>
+                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                    <Scissors size={28} className="text-muted" />
+                    <span className="text-xs">Beschneiden</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '1rem' }}>
+                <div className="text-xs text-muted mb-3 font-semibold tracking-wider">{activeTab === 'log' ? 'NEUER EINTRAG' : activeTab === 'settings' ? 'EINSTELLUNGEN' : 'HISTORIE'}</div>
             {activeTab === 'log' && (
               <form onSubmit={handleLogSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div className="flex-center" style={{ flexDirection: 'column', gap: '0.5rem' }}>
@@ -515,6 +587,8 @@ export default function PlantsView() {
                 )}
               </div>
             )}
+              </div>
+            </div>
           </div>
         </div>,
         document.body
