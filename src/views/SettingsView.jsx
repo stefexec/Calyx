@@ -109,7 +109,7 @@ export default function SettingsView() {
   const [newProduct, setNewProduct] = useState({ brand: '', name: '' });
   const [newRecipe, setNewRecipe] = useState({ name: '', ingredients: [] });
   const [selectedIngredient, setSelectedIngredient] = useState('');
-  const [ingredientMl, setIngredientMl] = useState(1);
+  const [ingredientMl, setIngredientMl] = useState('');
   
   const [calcBoxDose, setCalcBoxDose] = useState(20);
   const [calcBoxVolume, setCalcBoxVolume] = useState(10);
@@ -133,7 +133,7 @@ export default function SettingsView() {
         });
       }
       setSelectedIngredient('');
-      setIngredientMl(1);
+      setIngredientMl('');
     }
   };
 
@@ -383,12 +383,13 @@ export default function SettingsView() {
                   
                   <div className="mb-3">
                     <label className="text-xs text-muted mb-1 block">Ingredients (Baseline per 1 Liter)</label>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
                       <select className="input-premium" style={{ flex: 2 }} value={selectedIngredient} onChange={e => setSelectedIngredient(e.target.value)}>
                         <option value="">Select Product...</option>
                         {products.map(p => <option key={p.id} value={p.id}>{p.brand} {p.name}</option>)}
                       </select>
-                      <input type="number" min="0.1" step="0.1" className="input-premium" style={{ flex: 1 }} value={ingredientMl} onChange={e => setIngredientMl(parseFloat(e.target.value) || 0)} placeholder="ml/L" />
+                      <input type="number" min="0.1" step="0.1" className="input-premium" style={{ flex: 1, paddingRight: '0.5rem' }} value={ingredientMl} onChange={e => setIngredientMl(e.target.value)} placeholder="e.g. 1.5" />
+                      <span className="text-muted text-sm">ml</span>
                       <button type="button" className="btn btn-secondary" onClick={handleAddIngredient}><Plus size={18} /></button>
                     </div>
                     {newRecipe.ingredients.length > 0 && (
