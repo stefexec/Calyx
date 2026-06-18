@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Database, Link, Wrench, Bell, Sprout, X, Plus, Trash2, Save, Key, Server } from 'lucide-react';
+import { Database, Link, Wrench, Bell, Sprout, X, Plus, Trash2, Save, Key, Server, Copy, Check } from 'lucide-react';
 import useSettingsStore from '../store/useSettingsStore';
 import useNutrientStore from '../store/useNutrientStore';
 import useConnectionStore from '../store/useConnectionStore';
 import { sendNotification } from '../utils/notifications';
 import { fetchApi } from '../utils/api';
-import { useEffect } from 'react';
 
 export default function SettingsView() {
   const { ntfyUrl, ntfyTopic, ntfyToken, haUrl, haToken, defaultVegDays, luxThreshold, updateNtfySettings, updateHaSettings, updateDefaultVegDays, updateLuxThreshold } = useSettingsStore();
@@ -18,6 +17,8 @@ export default function SettingsView() {
   
   const [apiKeysList, setApiKeysList] = useState([]);
   const [newKeyName, setNewKeyName] = useState('');
+  const [newlyGeneratedKey, setNewlyGeneratedKey] = useState(null);
+  const [copiedKey, setCopiedKey] = useState(false);
 
   useEffect(() => {
     if (apiKey) {
@@ -46,9 +47,27 @@ export default function SettingsView() {
       const data = await fetchApi('/apikeys/', { method: 'POST', body: JSON.stringify({ name: newKeyName }) });
       setApiKeysList([...apiKeysList, data]);
       setNewKeyName('');
-      alert(`New API Key generated:\n\n${data.key}\n\nPlease save this now, it won't be shown again!`);
+      setNewlyGeneratedKey(data.key);
+      setCopiedKey(false);
+      try {
+        await navigator.clipboard.writeText(data.key);
+        setCopiedKey(true);
+      } catch (err) {
+        // Fallback if clipboard API fails
+      }
     } catch (e) {
       alert("Failed to create API key");
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (newlyGeneratedKey) {
+      try {
+        await navigator.clipboard.writeText(newlyGeneratedKey);
+        setCopiedKey(true);
+      } catch (err) {
+        console.error("Failed to copy text: ", err);
+      }
     }
   };
 
@@ -157,6 +176,19 @@ export default function SettingsView() {
             <input type="text" className="input-premium" style={{ flex: 1 }} placeholder="New device name (e.g. iPhone)" value={newKeyName} onChange={e => setNewKeyName(e.target.value)} required />
             <button type="submit" className="btn btn-secondary"><Plus size={18} /></button>
           </form>
+
+          {newlyGeneratedKey && (
+            <div className="mb-4" style={{ background: 'rgba(var(--success-rgb), 0.1)', border: '1px solid var(--success)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+              <div className="text-sm font-semibold text-success mb-2">New API Key Generated!</div>
+              <p className="text-xs text-muted mb-3">Please save this key securely right now. It will not be shown again once you close this page.</p>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input type="text" className="input-premium" value={newlyGeneratedKey} readOnly style={{ flex: 1, color: 'var(--success)', fontFamily: 'monospace' }} />
+                <button className={`btn ${copiedKey ? 'btn-success' : 'btn-secondary'}`} onClick={copyToClipboard} style={{ padding: '0 1rem' }}>
+                  {copiedKey ? <Check size={18} /> : <Copy size={18} />}
+                </button>
+              </div>
+            </div>
+          )}
 
           {apiKeysList.length > 0 ? (
             <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
