@@ -45,8 +45,24 @@ Start the development server:
 npm run dev
 ```
 
+### Android APK
+
 Build the web assets and synchronize them to the Android project:
 ```bash
 npm run build
 npx cap sync android
+```
+
+### Web application
+
+The interface runs in a web browser without requiring the Android APK. Navigate to the hosted URL and select the browser's "Add to Home Screen" option. This installs a progressive web app shortcut. The browser deployment executes the identical React codebase as the Capacitor build.
+
+### Docker deployment
+
+The repository includes a multi-stage `Dockerfile`. The first stage compiles the React application using Node 20. The second stage serves the static assets through an Nginx Alpine container on port 80.
+
+Build and run the container:
+```bash
+docker build -t calyx .
+docker run -d -p 8080:80 calyx
 ```
