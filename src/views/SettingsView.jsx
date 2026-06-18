@@ -255,7 +255,6 @@ export default function SettingsView() {
         </div>,
         document.body
       )}
-      </div>
     </div>
   );
 }
