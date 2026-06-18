@@ -16,6 +16,10 @@ export default function SettingsView() {
   const [newRecipe, setNewRecipe] = useState({ name: '', ingredients: [] });
   const [selectedIngredient, setSelectedIngredient] = useState('');
   const [ingredientMl, setIngredientMl] = useState(1);
+  
+  const [calcBoxDose, setCalcBoxDose] = useState(20);
+  const [calcBoxVolume, setCalcBoxVolume] = useState(10);
+  const [calcTargetScale, setCalcTargetScale] = useState(100);
 
   const handleAddProduct = (e) => {
     e.preventDefault();
@@ -133,7 +137,10 @@ export default function SettingsView() {
             <h2 className="text-lg">Nutrient Configurator</h2>
           </div>
           <p className="text-sm text-muted mb-4">Manage your fertilizer brands, products, and custom feeding recipes.</p>
-          <button className="btn btn-secondary w-full" onClick={() => setShowNutrientModal(true)}>Manage Nutrients</button>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="btn btn-secondary w-full" onClick={() => { setShowNutrientModal(true); setNutrientTab('products'); }}>Manage Nutrients</button>
+            <button className="btn btn-primary w-full" onClick={() => { setShowNutrientModal(true); setNutrientTab('calculator'); }}>Calculator</button>
+          </div>
         </div>
       </div>
 
@@ -153,7 +160,10 @@ export default function SettingsView() {
                 Products
               </button>
               <button className={`btn ${nutrientTab === 'recipes' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setNutrientTab('recipes')}>
-                Presets (Recipes)
+                Presets
+              </button>
+              <button className={`btn ${nutrientTab === 'calculator' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setNutrientTab('calculator')}>
+                Calculator
               </button>
             </div>
 
@@ -177,11 +187,11 @@ export default function SettingsView() {
                 <div className="glass p-4" style={{ borderRadius: 'var(--radius-md)' }}>
                   <h3 className="text-md mb-3">Existing Products</h3>
                   {products.length === 0 ? <p className="text-sm text-muted">No products found.</p> : (
-                    <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {products.map(p => (
-                        <li key={p.id} className="flex-between p-2" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}>
+                        <li key={p.id} className="flex-between p-3" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
                           <span className="text-sm font-semibold">{p.brand} {p.name}</span>
-                          <button className="text-error hover-opacity" onClick={() => deleteProduct(p.id)}><Trash2 size={16} /></button>
+                          <button className="text-error hover-opacity" onClick={() => deleteProduct(p.id)}><Trash2 size={18} /></button>
                         </li>
                       ))}
                     </ul>
@@ -248,6 +258,41 @@ export default function SettingsView() {
                       ))}
                     </ul>
                   )}
+                </div>
+              </div>
+            )}
+
+            {nutrientTab === 'calculator' && (
+              <div className="glass p-4" style={{ borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div>
+                  <h3 className="text-md mb-2">Dosage Calculator</h3>
+                  <p className="text-sm text-muted">Calculate the baseline (ml per 1 Liter) for your presets based on what's written on the fertilizer bottle.</p>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label className="text-xs text-muted mb-1 block">Recommended Dose (ml)</label>
+                    <input type="number" min="0" step="0.1" className="input-premium" value={calcBoxDose} onChange={e => setCalcBoxDose(parseFloat(e.target.value) || 0)} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label className="text-xs text-muted mb-1 block">Per Water Volume (Liters)</label>
+                    <input type="number" min="0.1" step="0.1" className="input-premium" value={calcBoxVolume} onChange={e => setCalcBoxVolume(parseFloat(e.target.value) || 1)} />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs text-muted mb-2 flex-between">
+                    <span>Target Strength Scale</span>
+                    <span className="font-semibold text-info">{calcTargetScale}%</span>
+                  </label>
+                  <input type="range" min="10" max="200" step="10" value={calcTargetScale} onChange={e => setCalcTargetScale(parseInt(e.target.value))} style={{ width: '100%' }} />
+                </div>
+
+                <div className="p-4" style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
+                  <span className="text-sm text-muted block mb-1">Your Baseline for Presets</span>
+                  <span className="text-2xl font-bold text-success">
+                    {((calcBoxDose / calcBoxVolume) * (calcTargetScale / 100)).toFixed(2)} ml / Liter
+                  </span>
                 </div>
               </div>
             )}
