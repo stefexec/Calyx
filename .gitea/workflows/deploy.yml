@@ -17,9 +17,7 @@ jobs:
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          password: ${{ secrets.SERVER_PASSWORD }}
-          # Alternatively use an SSH key instead of a password:
-          # key: ${{ secrets.SERVER_SSH_KEY }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             # Navigate to the repository folder on the server
             cd /opt/calyx
