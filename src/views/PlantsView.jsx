@@ -57,7 +57,7 @@ export default function PlantsView() {
       ecInput: action.actionType === 'nutrients' ? (action.ecInput || null) : null,
       phInput: action.actionType === 'nutrients' ? (action.phInput || null) : null,
       notes: action.notes || action.label,
-      appliedRecipeId: null,
+      appliedRecipeId: action.actionType === 'nutrients' ? (action.recipeId || null) : null,
       recipeScale: 100
     });
     setTimeout(() => setActionFeedback(null), 1500);
@@ -605,6 +605,17 @@ export default function PlantsView() {
                             <label className="text-xs text-muted mb-1 block">Water Volume (Liters)</label>
                             <input type="number" step="0.1" className="input-premium" value={editingQuickAction.waterVolumeLiters} onChange={(e) => setEditingQuickAction({...editingQuickAction, waterVolumeLiters: parseFloat(e.target.value) || 0})} />
                           </div>
+                          {editingQuickAction.actionType === 'nutrients' && (
+                            <div style={{ flex: 1 }}>
+                              <label className="text-xs text-muted mb-1 block">Nutrient Recipe</label>
+                              <select className="input-premium" value={editingQuickAction.recipeId || ''} onChange={(e) => setEditingQuickAction({...editingQuickAction, recipeId: e.target.value})}>
+                                <option value="">(None)</option>
+                                {recipes.map(r => (
+                                  <option key={r.id} value={r.id}>{r.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="mb-3">
