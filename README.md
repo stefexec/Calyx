@@ -9,9 +9,9 @@
 # Calyx
 
 <p align="center">
-  <img src="./docs/screenshot_1.jpg" width="32%" />
-  <img src="./docs/screenshot_2.jpg" width="32%" />
-  <img src="./docs/screenshot_3.jpg" width="32%" />
+  <img src="./assets/screenshot_1.jpg" width="32%" />
+  <img src="./assets/screenshot_2.jpg" width="32%" />
+  <img src="./assets/screenshot_3.jpg" width="32%" />
 </p>
 
 
