@@ -40,6 +40,38 @@ export default function SettingsView() {
     alert('Connection settings saved! Reload the page to apply them properly if needed.');
   };
 
+  const fallbackCopyTextToClipboard = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      setCopiedKey(true);
+    } catch (err) {
+      console.error('Fallback: Oops, unable to copy', err);
+    }
+    document.body.removeChild(textArea);
+  };
+
+  const copyText = async (text) => {
+    if (!navigator.clipboard) {
+      fallbackCopyTextToClipboard(text);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(true);
+    } catch (err) {
+      fallbackCopyTextToClipboard(text);
+    }
+  };
+
   const handleCreateApiKey = async (e) => {
     e.preventDefault();
     if (!newKeyName) return;
@@ -49,25 +81,15 @@ export default function SettingsView() {
       setNewKeyName('');
       setNewlyGeneratedKey(data.key);
       setCopiedKey(false);
-      try {
-        await navigator.clipboard.writeText(data.key);
-        setCopiedKey(true);
-      } catch (err) {
-        // Fallback if clipboard API fails
-      }
+      copyText(data.key);
     } catch (e) {
       alert("Failed to create API key");
     }
   };
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = () => {
     if (newlyGeneratedKey) {
-      try {
-        await navigator.clipboard.writeText(newlyGeneratedKey);
-        setCopiedKey(true);
-      } catch (err) {
-        console.error("Failed to copy text: ", err);
-      }
+      copyText(newlyGeneratedKey);
     }
   };
 
