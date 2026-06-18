@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { fetchApi } from '../utils/api';
 
 const useSettingsStore = create((set) => ({
-  ntfyUrl: 'https://ntfy.gurk.dev',
+  ntfyUrl: 'https://ntfy.sh',
   ntfyTopic: 'calyx_alerts',
   ntfyToken: '',
   haUrl: '',
@@ -19,7 +19,7 @@ const useSettingsStore = create((set) => ({
       settings.forEach(s => { settingsMap[s.key] = s.value; });
       
       set({ 
-        ntfyUrl: settingsMap['ntfyUrl'] || 'https://ntfy.gurk.dev',
+        ntfyUrl: settingsMap['ntfyUrl'] || 'https://ntfy.sh',
         ntfyTopic: settingsMap['ntfyTopic'] || 'calyx_alerts',
         ntfyToken: settingsMap['ntfyToken'] || '',
         haUrl: settingsMap['haUrl'] || '',

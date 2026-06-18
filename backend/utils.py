@@ -10,7 +10,7 @@ async def send_ntfy_notification(title: str, message: str, priority: str, db: Se
     ntfy_topic_setting = db.query(models.AppSetting).filter(models.AppSetting.key == "ntfyTopic").first()
     ntfy_token_setting = db.query(models.AppSetting).filter(models.AppSetting.key == "ntfyToken").first()
     
-    ntfy_url = ntfy_url_setting.value if ntfy_url_setting else "https://ntfy.gurk.dev"
+    ntfy_url = ntfy_url_setting.value if ntfy_url_setting else "https://ntfy.sh"
     ntfy_topic = ntfy_topic_setting.value if ntfy_topic_setting else "calyx_alerts"
     ntfy_token = ntfy_token_setting.value if ntfy_token_setting else ""
     
