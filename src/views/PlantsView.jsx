@@ -705,10 +705,10 @@ export default function PlantsView() {
                             <div key={log.id} onClick={() => setSelectedLog(log)} className="glass hover-opacity" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}>
                               <div className="flex-between mb-1">
                                 <span className="text-xs text-muted">{date.toLocaleDateString()} {date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                                <span className="text-xs font-semibold text-info">{log.waterVolumeLiters}L Water</span>
+                                {log.waterVolumeLiters > 0 && <span className="text-xs font-semibold text-info">{log.waterVolumeLiters}L Water</span>}
                               </div>
                               <div className="flex-between">
-                                <span className="text-sm">Watering / Feed</span>
+                                <span className="text-sm">{log.waterVolumeLiters > 0 ? 'Watering / Feed' : (log.notes || 'Aktion')}</span>
                                 <span className="text-xs">
                                   {log.phInput != null && `pH: ${log.phInput}`}
                                   {log.phInput != null && log.ecInput != null && ' | '}
@@ -852,48 +852,52 @@ export default function PlantsView() {
               <div className="font-semibold">{new Date(selectedLog.timestamp).toLocaleString()}</div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-              <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                <div className="text-xs text-muted mb-1">Water Volume</div>
-                <div className="text-lg font-bold text-info">{selectedLog.waterVolumeLiters} L</div>
-              </div>
-              <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                <div className="text-xs text-muted mb-1">pH / EC</div>
-                <div className="text-lg font-bold">
-                  {selectedLog.phInput != null ? selectedLog.phInput : '--'} / {selectedLog.ecInput != null ? selectedLog.ecInput : '--'}
+            {(selectedLog.waterVolumeLiters > 0 || selectedLog.phInput != null || selectedLog.ecInput != null) && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                  <div className="text-xs text-muted mb-1">Water Volume</div>
+                  <div className="text-lg font-bold text-info">{selectedLog.waterVolumeLiters || 0} L</div>
+                </div>
+                <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                  <div className="text-xs text-muted mb-1">pH / EC</div>
+                  <div className="text-lg font-bold">
+                    {selectedLog.phInput != null ? selectedLog.phInput : '--'} / {selectedLog.ecInput != null ? selectedLog.ecInput : '--'}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
-              <h3 className="text-sm text-primary mb-3">Nutrient Mix</h3>
-              {(() => {
-                if (!selectedLog.appliedRecipeId) return <div className="text-sm text-muted">Plain Water (No nutrients added)</div>;
-                
-                const recipe = recipes.find(r => r.id === selectedLog.appliedRecipeId);
-                if (!recipe) return <div className="text-sm text-muted">Unknown Recipe (Deleted)</div>;
+            {selectedLog.waterVolumeLiters > 0 && (
+              <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
+                <h3 className="text-sm text-primary mb-3">Nutrient Mix</h3>
+                {(() => {
+                  if (!selectedLog.appliedRecipeId) return <div className="text-sm text-muted">Plain Water (No nutrients added)</div>;
+                  
+                  const recipe = recipes.find(r => r.id === selectedLog.appliedRecipeId);
+                  if (!recipe) return <div className="text-sm text-muted">Unknown Recipe (Deleted)</div>;
 
-                return (
-                  <div>
-                    <div className="flex-between mb-2">
-                      <span className="font-semibold">{recipe.name}</span>
-                      <span className="text-xs text-accent bg-glass px-2 py-1" style={{ borderRadius: '4px' }}>Scale: {selectedLog.recipeScale}%</span>
+                  return (
+                    <div>
+                      <div className="flex-between mb-2">
+                        <span className="font-semibold">{recipe.name}</span>
+                        <span className="text-xs text-accent bg-glass px-2 py-1" style={{ borderRadius: '4px' }}>Scale: {selectedLog.recipeScale}%</span>
+                      </div>
+                      <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                        {recipe.ingredients.map(ing => {
+                          const amount = (ing.mlPerLiter * selectedLog.waterVolumeLiters * (selectedLog.recipeScale / 100)).toFixed(1);
+                          return (
+                            <li key={ing.productId} className="flex-between text-sm" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                              <span>{ing.name}</span>
+                              <span className="font-semibold text-success">{amount} ml</span>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
-                    <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                      {recipe.ingredients.map(ing => {
-                        const amount = (ing.mlPerLiter * selectedLog.waterVolumeLiters * (selectedLog.recipeScale / 100)).toFixed(1);
-                        return (
-                          <li key={ing.productId} className="flex-between text-sm" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
-                            <span>{ing.name}</span>
-                            <span className="font-semibold text-success">{amount} ml</span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                );
-              })()}
-            </div>
+                  );
+                })()}
+              </div>
+            )}
 
             {selectedLog.notes && (
               <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
