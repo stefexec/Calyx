@@ -12,18 +12,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Deploy to Homelab via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            # Navigate to the repository folder on the server
-            cd /opt/calyx
-            
-            # Pull the latest changes from the repository
-            git pull origin master
-            
-            # Rebuild and restart the Docker containers in the background
-            docker-compose up -d --build
+      - name: Deploy Local Docker Containers
+        run: |
+          # Pull the latest changes
+          git pull origin master
+          
+          # Rebuild and restart the Docker containers
+          docker-compose up -d --build
