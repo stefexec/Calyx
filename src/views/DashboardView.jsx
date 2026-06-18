@@ -1,4 +1,4 @@
-import { Thermometer, Droplets, Wind, CheckCircle2, Plus, X, Calendar } from 'lucide-react';
+import { Thermometer, Droplets, Wind, CheckCircle2, Plus, X, Calendar, Coffee, Copy, Check } from 'lucide-react';
 import useEnvironmentStore from '../store/useEnvironmentStore';
 import usePlantStore from '../store/usePlantStore';
 import useTaskStore, { TaskCategory } from '../store/useTaskStore';
@@ -13,7 +13,9 @@ export default function DashboardView() {
 
   const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ plantId: '', category: TaskCategory.TRAINING, description: '' });
+  const [copiedAddress, setCopiedAddress] = useState(null);
 
   const scrollRef = useRef(null);
   const selectedDateRef = useRef(null);
@@ -50,6 +52,30 @@ export default function DashboardView() {
     return { temp: '--', rh: '--', vpd: '--' };
   };
 
+  const handleCopy = (text, type) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text);
+    } else {
+      // Fallback for HTTP
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+      } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+      }
+      document.body.removeChild(textArea);
+    }
+    setCopiedAddress(type);
+    setTimeout(() => setCopiedAddress(null), 2000);
+  };
+
   return (
     <div className="page-container">
       <div className="flex-between mb-4">
@@ -57,7 +83,11 @@ export default function DashboardView() {
           <h1 className="text-gradient">Calyx</h1>
           <p className="text-muted text-sm">Your Garden Overview</p>
         </div>
-        <div className="glass flex-center" style={{ width: 40, height: 40, borderRadius: '50%' }}>
+        <div 
+          className="glass flex-center" 
+          style={{ width: 40, height: 40, borderRadius: '50%', cursor: 'pointer' }}
+          onClick={() => setShowCreditsModal(true)}
+        >
           <span role="img" aria-label="leaf">🌿</span>
         </div>
       </div>
@@ -200,6 +230,79 @@ export default function DashboardView() {
 
               <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Schedule Event</button>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showCreditsModal && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex-between mb-6">
+              <h2>About</h2>
+              <button className="btn btn-secondary" onClick={() => setShowCreditsModal(false)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
+              <div>
+                <h3 className="text-gradient mb-2" style={{ fontSize: '1.5rem' }}>Calyx</h3>
+                <p className="text-muted">© 2026 Calyx v1.1.0 • by Gurkenwerfer</p>
+              </div>
+
+              <div style={{ background: 'var(--bg-glass)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--border)' }}>
+                <h4 className="mb-4 text-sm text-muted" style={{ textTransform: 'uppercase', letterSpacing: '1px' }}>Support the Developer</h4>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {[
+                    { label: 'BTC', address: 'bc1qytee2a0z2tg4k4zdtqj08zpellkrecrgdgg36z' },
+                    { label: 'ETH', address: '0x49372575383aEA56b78524C4FD0873DE1175e9be' },
+                    { label: 'LTC', address: 'ltc1qk2pe4srtcjt2cnnp5fcfvmknwckjus9ge8v5p9' }
+                  ].map((crypto) => (
+                    <div 
+                      key={crypto.label}
+                      className="glass flex-between"
+                      style={{ padding: '0.75rem 1rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                      onClick={() => handleCopy(crypto.address, crypto.label)}
+                    >
+                      <div className="flex-center" style={{ gap: '0.75rem' }}>
+                        <span className="font-semibold text-accent">{crypto.label}</span>
+                        <span className="text-sm text-muted" style={{ fontFamily: 'monospace', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {crypto.address}
+                        </span>
+                      </div>
+                      {copiedAddress === crypto.label ? <Check size={16} className="text-primary" /> : <Copy size={16} className="text-muted" />}
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: '2rem' }}>
+                  <a 
+                    href="https://buymeacoffee.com/gurkenwerfer" 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="flex-center"
+                    style={{ 
+                      width: '100%', 
+                      gap: '0.75rem', 
+                      background: '#FFDD00', 
+                      color: '#000000', 
+                      borderRadius: 'var(--radius-md)',
+                      padding: '0.6rem 1rem',
+                      textDecoration: 'none',
+                      transition: 'transform 0.2s ease',
+                      fontSize: '0.9rem'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    <Coffee size={24} style={{ flexShrink: 0 }} />
+                    <span className="font-semibold">Alternatively, you can Buy Me a Coffee. Thank you! 💖</span>
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>,
         document.body
