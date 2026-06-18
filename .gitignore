@@ -26,3 +26,4 @@ dist-ssr
 data/
 uploads/
 backend/__pycache__/
+walkthroughs/
