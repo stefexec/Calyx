@@ -248,7 +248,7 @@ export default function DashboardView() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
               <div>
                 <h3 className="text-gradient mb-2" style={{ fontSize: '1.5rem' }}>Calyx</h3>
-                <p className="text-muted">© 2026 Calyx v1.1.0 • by Gurkenwerfer</p>
+                <p className="text-muted">© 2026 Calyx v1.1.1 • by Gurkenwerfer</p>
               </div>
 
               <div style={{ background: 'var(--bg-glass)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--border)' }}>
