@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchApi, HOST_URL } from '../utils/api';
+import { fetchApi, getHostUrl } from '../utils/api';
 
 const useGalleryStore = create((set) => ({
   images: [],
@@ -15,7 +15,7 @@ const useGalleryStore = create((set) => ({
         timestamp: img.timestamp ? img.timestamp + "Z" : new Date().toISOString(),
         daysSinceGermination: img.days_since_germination,
         phase: img.phase,
-        fileUrl: `${HOST_URL}${img.file_path}`
+        fileUrl: `${getHostUrl()}${img.file_path}`
       }));
       set({ images: mapped, isLoading: false });
     } catch (error) {
@@ -48,7 +48,7 @@ const useGalleryStore = create((set) => ({
         timestamp: created.timestamp ? created.timestamp + "Z" : new Date().toISOString(),
         daysSinceGermination: created.days_since_germination,
         phase: created.phase,
-        fileUrl: `${HOST_URL}${created.file_path}`
+        fileUrl: `${getHostUrl()}${created.file_path}`
       };
 
       set((state) => ({ 

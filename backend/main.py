@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
@@ -10,7 +10,9 @@ from database import engine, Base, SessionLocal
 import models
 from utils import send_ntfy_notification
 from routers.homeassistant import get_ha_config
-from routers import environments, plants, logs, tasks, gallery, nutrients, settings, homeassistant
+from routers import environments, plants, logs, tasks, gallery, nutrients, settings, homeassistant, apikeys
+from auth import get_api_key
+import secrets
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
@@ -33,14 +35,15 @@ os.makedirs("/app/uploads", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="/app/uploads"), name="uploads")
 
 # Include routers
-app.include_router(environments.router, prefix="/api/environments", tags=["environments"])
-app.include_router(plants.router, prefix="/api/plants", tags=["plants"])
-app.include_router(logs.router, prefix="/api/logs", tags=["logs"])
-app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"])
-app.include_router(gallery.router, prefix="/api/gallery", tags=["gallery"])
-app.include_router(nutrients.router, prefix="/api/nutrients", tags=["nutrients"])
-app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
-app.include_router(homeassistant.router, prefix="/api/ha", tags=["ha"])
+app.include_router(environments.router, prefix="/api/environments", tags=["environments"], dependencies=[Depends(get_api_key)])
+app.include_router(plants.router, prefix="/api/plants", tags=["plants"], dependencies=[Depends(get_api_key)])
+app.include_router(logs.router, prefix="/api/logs", tags=["logs"], dependencies=[Depends(get_api_key)])
+app.include_router(tasks.router, prefix="/api/tasks", tags=["tasks"], dependencies=[Depends(get_api_key)])
+app.include_router(gallery.router, prefix="/api/gallery", tags=["gallery"], dependencies=[Depends(get_api_key)])
+app.include_router(nutrients.router, prefix="/api/nutrients", tags=["nutrients"], dependencies=[Depends(get_api_key)])
+app.include_router(settings.router, prefix="/api/settings", tags=["settings"], dependencies=[Depends(get_api_key)])
+app.include_router(homeassistant.router, prefix="/api/ha", tags=["ha"], dependencies=[Depends(get_api_key)])
+app.include_router(apikeys.router, prefix="/api/apikeys", tags=["apikeys"], dependencies=[Depends(get_api_key)])
 
 @app.get("/api/health")
 def health_check():
@@ -126,4 +129,22 @@ async def light_bleed_monitor():
 
 @app.on_event("startup")
 async def startup_event():
+    db = SessionLocal()
+    try:
+        if db.query(models.ApiKey).count() == 0:
+            initial_key = "calyx_" + secrets.token_urlsafe(32)
+            db_key = models.ApiKey(name="Initial Setup Key", key=initial_key)
+            db.add(db_key)
+            db.commit()
+            try:
+                with open("/app/data/initial_api_key.txt", "w") as f:
+                    f.write(f"Your initial API key is: {initial_key}\nSave this somewhere safe or use it to generate more keys.")
+                logger.info("Generated initial API key in /app/data/initial_api_key.txt")
+            except Exception as e:
+                logger.error(f"Failed to write initial API key to file: {e}")
+                # Fallback print for local dev if file writing fails
+                print(f"!!! INITIAL API KEY: {initial_key} !!!")
+    finally:
+        db.close()
+    
     asyncio.create_task(light_bleed_monitor())

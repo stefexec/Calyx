@@ -1,15 +1,67 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Database, Link, Wrench, Bell, Sprout, X, Plus, Trash2, Save } from 'lucide-react';
+import { Database, Link, Wrench, Bell, Sprout, X, Plus, Trash2, Save, Key, Server } from 'lucide-react';
 import useSettingsStore from '../store/useSettingsStore';
 import useNutrientStore from '../store/useNutrientStore';
+import useConnectionStore from '../store/useConnectionStore';
 import { sendNotification } from '../utils/notifications';
 import { fetchApi } from '../utils/api';
+import { useEffect } from 'react';
 
 export default function SettingsView() {
   const { ntfyUrl, ntfyTopic, ntfyToken, haUrl, haToken, defaultVegDays, luxThreshold, updateNtfySettings, updateHaSettings, updateDefaultVegDays, updateLuxThreshold } = useSettingsStore();
   const { products, recipes, addProduct, deleteProduct, addRecipe, deleteRecipe } = useNutrientStore();
+  const { serverUrl, apiKey, setConnectionDetails } = useConnectionStore();
+
+  const [localServerUrl, setLocalServerUrl] = useState(serverUrl || '');
+  const [localApiKey, setLocalApiKey] = useState(apiKey || '');
   
+  const [apiKeysList, setApiKeysList] = useState([]);
+  const [newKeyName, setNewKeyName] = useState('');
+
+  useEffect(() => {
+    if (apiKey) {
+      fetchApiKeys();
+    }
+  }, [apiKey, serverUrl]);
+
+  const fetchApiKeys = async () => {
+    try {
+      const data = await fetchApi('/apikeys/');
+      setApiKeysList(data);
+    } catch (e) {
+      console.error("Failed to fetch API keys. Ensure your current key is valid.", e);
+    }
+  };
+
+  const handleSaveConnection = () => {
+    setConnectionDetails(localServerUrl, localApiKey);
+    alert('Connection settings saved! Reload the page to apply them properly if needed.');
+  };
+
+  const handleCreateApiKey = async (e) => {
+    e.preventDefault();
+    if (!newKeyName) return;
+    try {
+      const data = await fetchApi('/apikeys/', { method: 'POST', body: JSON.stringify({ name: newKeyName }) });
+      setApiKeysList([...apiKeysList, data]);
+      setNewKeyName('');
+      alert(`New API Key generated:\n\n${data.key}\n\nPlease save this now, it won't be shown again!`);
+    } catch (e) {
+      alert("Failed to create API key");
+    }
+  };
+
+  const handleDeleteApiKey = async (id) => {
+    if (!confirm("Are you sure you want to delete this API key? Devices using it will be disconnected.")) return;
+    try {
+      await fetchApi(`/apikeys/${id}`, { method: 'DELETE' });
+      setApiKeysList(apiKeysList.filter(k => k.id !== id));
+    } catch (e) {
+      alert(`Failed to delete API key: ${e.message}`);
+    }
+  };
+
   const [showNutrientModal, setShowNutrientModal] = useState(false);
   const [nutrientTab, setNutrientTab] = useState('products'); // 'products' or 'recipes'
   
@@ -77,6 +129,52 @@ export default function SettingsView() {
       <h1 className="mb-6">Settings & Integrations</h1>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div className="glass-card">
+          <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
+            <Server className="text-primary" size={24} />
+            <h2 className="text-lg">Server Connection</h2>
+          </div>
+          <p className="text-sm text-muted mb-4">Connect to your homelab server over the internet (e.g. via Cloudflare). Leave Server URL empty to use the local hostname.</p>
+          <div className="mb-4">
+            <label className="text-xs text-muted mb-1 block">Server URL</label>
+            <input type="text" className="input-premium" placeholder={`http://${window.location.hostname}:8000`} value={localServerUrl} onChange={(e) => setLocalServerUrl(e.target.value)} />
+          </div>
+          <div className="mb-4">
+            <label className="text-xs text-muted mb-1 block">API Key</label>
+            <input type="password" className="input-premium" placeholder="calyx_..." value={localApiKey} onChange={(e) => setLocalApiKey(e.target.value)} />
+          </div>
+          <button className="btn btn-primary w-full" onClick={handleSaveConnection}>Save Connection Details</button>
+        </div>
+
+        <div className="glass-card">
+          <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
+            <Key className="text-warning" size={24} />
+            <h2 className="text-lg">API Keys Management</h2>
+          </div>
+          <p className="text-sm text-muted mb-4">Manage access tokens for your devices. You must be connected with a valid API key to view or create new keys.</p>
+          
+          <form onSubmit={handleCreateApiKey} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+            <input type="text" className="input-premium" style={{ flex: 1 }} placeholder="New device name (e.g. iPhone)" value={newKeyName} onChange={e => setNewKeyName(e.target.value)} required />
+            <button type="submit" className="btn btn-secondary"><Plus size={18} /></button>
+          </form>
+
+          {apiKeysList.length > 0 ? (
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {apiKeysList.map(k => (
+                <li key={k.id} className="flex-between p-3 text-sm" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)' }}>
+                  <div>
+                    <div className="font-semibold">{k.name}</div>
+                    <div className="text-xs text-muted">Created: {new Date(k.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <button className="text-error hover-opacity" onClick={() => handleDeleteApiKey(k.id)}><Trash2 size={16} /></button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted text-center p-4">No API keys loaded. Check your connection.</p>
+          )}
+        </div>
+
         <div className="glass-card">
           <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
             <Link className="text-primary" size={24} />

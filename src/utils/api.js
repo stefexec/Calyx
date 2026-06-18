@@ -1,13 +1,32 @@
-export const HOST_URL = `http://${window.location.hostname}:8000`;
-export const API_BASE_URL = `${HOST_URL}/api`;
+import useConnectionStore from '../store/useConnectionStore';
+
+export const getHostUrl = () => {
+  const { serverUrl } = useConnectionStore.getState();
+  if (serverUrl) {
+    return serverUrl.replace(/\/$/, '');
+  }
+  return `http://${window.location.hostname}:8000`;
+};
+
+export const getApiBaseUrl = () => {
+  return `${getHostUrl()}/api`;
+};
+
 
 export async function fetchApi(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${endpoint}`;
   
+  const { apiKey } = useConnectionStore.getState();
+
   const headers = {
     'Accept': 'application/json',
     ...(options.headers || {})
   };
+
+  if (apiKey) {
+    headers['X-API-Key'] = apiKey;
+  }
 
   // If we are passing JSON (and it's not FormData), add content-type
   if (options.body && typeof options.body === 'string' && !headers['Content-Type']) {

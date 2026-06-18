@@ -82,3 +82,11 @@ class AppSetting(Base):
 
     key = Column(String, primary_key=True, index=True)
     value = Column(String)
+
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id = Column(String, primary_key=True, default=generate_uuid, index=True)
+    name = Column(String, index=True)
+    key = Column(String, unique=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

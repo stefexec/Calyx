@@ -44,9 +44,6 @@ export default function EnvironmentsView() {
           <button className="btn btn-primary" style={{ padding: '0.5rem' }} onClick={() => setShowModal(true)}>
             <Plus size={20} />
           </button>
-          <button className="btn btn-secondary" style={{ padding: '0.5rem' }}>
-            <Settings2 size={20} />
-          </button>
         </div>
       </div>
 
@@ -66,7 +63,7 @@ export default function EnvironmentsView() {
                 </div>
               </div>
               <button className="btn btn-secondary" style={{ padding: '0.5rem', borderRadius: '50%' }} onClick={() => setSelectedEnvForSettings(env)}>
-                <Settings size={20} />
+                <Settings2 size={20} />
               </button>
             </div>
 
