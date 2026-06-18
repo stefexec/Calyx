@@ -30,6 +30,7 @@ export default function PlantsView() {
   const [strainQuery, setStrainQuery] = useState('');
   const [strainResults, setStrainResults] = useState([]);
   const [selectedLog, setSelectedLog] = useState(null);
+  const [fullScreenImage, setFullScreenImage] = useState(null);
   const fileInputRef = useRef(null);
 
   React.useEffect(() => {
@@ -233,8 +234,26 @@ export default function PlantsView() {
       {selectedPlant && createPortal(
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="flex-between mb-4">
-              <h2>{currentPlant.name}</h2>
+            <div className="flex-between mb-4" style={{ alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                {getLatestPlantImage(currentPlant.id) ? (
+                  <div 
+                    onClick={() => setFullScreenImage(getLatestPlantImage(currentPlant.id))}
+                    style={{ width: '60px', height: '60px', borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', border: '2px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}
+                    className="hover-opacity"
+                  >
+                    <img src={getLatestPlantImage(currentPlant.id)} alt={currentPlant.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                ) : (
+                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--border)' }}>
+                    <span style={{ fontSize: '1.5rem' }}>🪴</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <h2 style={{ margin: 0, fontSize: '1.5rem', lineHeight: 1.2 }}>{currentPlant.name}</h2>
+                  <span className="text-xs text-muted font-semibold">{currentPlant.strainName || 'Unknown Strain'}</span>
+                </div>
+              </div>
               <button className="btn btn-secondary" onClick={() => setSelectedPlant(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
             </div>
             
@@ -645,6 +664,32 @@ export default function PlantsView() {
                 <p className="text-sm whitespace-pre-wrap">{selectedLog.notes}</p>
               </div>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {fullScreenImage && createPortal(
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'rgba(0,0,0,0.95)', 
+          backdropFilter: 'blur(10px)', 
+          zIndex: 2000, 
+          display: 'flex', 
+          flexDirection: 'column'
+        }}>
+          <div style={{ padding: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="btn btn-secondary" onClick={() => setFullScreenImage(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
+              <X size={24} />
+            </button>
+          </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 1rem', paddingBottom: '2rem' }}>
+            <img 
+              src={fullScreenImage} 
+              alt="Full size" 
+              style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: 'var(--radius-md)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }} 
+            />
           </div>
         </div>,
         document.body
