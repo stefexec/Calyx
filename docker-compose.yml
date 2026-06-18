@@ -11,3 +11,12 @@ services:
     environment:
       - DATABASE_URL=sqlite:////app/data/calyx.db
       - ENVIRONMENT=production
+
+  calyx-frontend:
+    build: .
+    container_name: calyx-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - calyx-backend
