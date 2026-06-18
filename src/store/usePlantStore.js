@@ -16,6 +16,13 @@ export const PlantPhase = {
   HARVESTED: 'Harvested'
 };
 
+export const defaultQuickActions = [
+  { id: 'qa-water', icon: 'Droplet', color: 'info', label: 'Wasser', waterVolumeLiters: 1, notes: 'Gegossen' },
+  { id: 'qa-nutes', icon: 'FileText', color: 'success', label: 'Nährstoffe', waterVolumeLiters: 1, notes: 'Nährstoffe gegeben' },
+  { id: 'qa-bug', icon: 'Bug', color: 'warning', label: 'Abwehrmittel', waterVolumeLiters: 0, notes: 'Abwehrmittel aufgetragen' },
+  { id: 'qa-cut', icon: 'Scissors', color: 'muted', label: 'Beschneiden', waterVolumeLiters: 0, notes: 'Beschnitten' },
+];
+
 const usePlantStore = create((set, get) => ({
   plants: [],
   isLoading: false,
@@ -38,7 +45,7 @@ const usePlantStore = create((set, get) => ({
           dateFlippedToFlower: plant.date_flipped ? plant.date_flipped + "Z" : null,
           currentPhase: plant.current_phase || PlantPhase.GERMINATION,
           hasSoilMoistureSensor: plant.has_soil_moisture_sensor || false,
-          sensorConfig: plant.sensor_config || { soilMoisture: '', soilTemp: '' },
+          sensorConfig: plant.sensor_config || { soilMoisture: '', soilTemp: '', quickActions: defaultQuickActions },
           trackEC: true, // Default local settings
           trackPH: true,
           currentMoistureLevel: existing ? existing.currentMoistureLevel : null,
@@ -67,7 +74,7 @@ const usePlantStore = create((set, get) => ({
         current_phase: plant.currentPhase,
         date_germinated: plant.dateGerminated ? new Date(plant.dateGerminated).toISOString().replace('Z', '') : null,
         has_soil_moisture_sensor: plant.hasSoilMoistureSensor || false,
-        sensor_config: plant.sensorConfig || { soilMoisture: '', soilTemp: '' }
+        sensor_config: plant.sensorConfig || { soilMoisture: '', soilTemp: '', quickActions: defaultQuickActions }
       };
       
       const created = await fetchApi('/plants/', {
@@ -85,7 +92,7 @@ const usePlantStore = create((set, get) => ({
         dateFlippedToFlower: created.date_flipped ? created.date_flipped + "Z" : null,
         currentPhase: created.current_phase || PlantPhase.GERMINATION,
         hasSoilMoistureSensor: created.has_soil_moisture_sensor || false,
-        sensorConfig: created.sensor_config || { soilMoisture: '', soilTemp: '' },
+        sensorConfig: created.sensor_config || { soilMoisture: '', soilTemp: '', quickActions: defaultQuickActions },
         trackEC: true,
         trackPH: true,
         currentMoistureLevel: null,

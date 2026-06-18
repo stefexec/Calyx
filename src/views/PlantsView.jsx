@@ -6,9 +6,13 @@ import useGalleryStore from '../store/useGalleryStore';
 import useNutrientStore from '../store/useNutrientStore';
 import useEnvironmentStore from '../store/useEnvironmentStore';
 import { fetchApi } from '../utils/api';
-import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2, ArrowLeft, Sprout, MapPin, Clock, Zap, Bug, Scissors } from 'lucide-react';
+import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2, ArrowLeft, Sprout, MapPin, Clock, Zap, Bug, Scissors, Check, Trash2, Edit } from 'lucide-react';
 import { differenceInDays, startOfDay } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
+const IconMap = {
+  Droplet, FileText, Bug, Scissors, Plus, Activity, Zap, Check, Settings, Camera, Search
+};
 
 export default function PlantsView() {
   const { plants, addPlant, updatePlant, toggleMoistureSensor, fetchPlantSensorStates, fetchPlantSensorHistory, deletePlant } = usePlantStore();
@@ -31,7 +35,58 @@ export default function PlantsView() {
   const [strainResults, setStrainResults] = useState([]);
   const [selectedLog, setSelectedLog] = useState(null);
   const [fullScreenImage, setFullScreenImage] = useState(null);
+  const [actionFeedback, setActionFeedback] = useState(null);
+  const [editingQuickAction, setEditingQuickAction] = useState(null);
   const fileInputRef = useRef(null);
+
+  const handleQuickAction = async (action) => {
+    setActionFeedback(action.id);
+    await addLog({
+      plantId: currentPlant.id,
+      waterVolumeLiters: action.waterVolumeLiters || 0,
+      ecInput: action.ecInput || null,
+      phInput: action.phInput || null,
+      notes: action.notes || action.label,
+      appliedRecipeId: null,
+      recipeScale: 100
+    });
+    setTimeout(() => setActionFeedback(null), 1500);
+  };
+
+  const handleAddQuickAction = () => {
+    setEditingQuickAction({
+      id: 'qa-' + Math.random().toString(36).substr(2, 9),
+      icon: 'Droplet',
+      color: 'info',
+      label: 'Neue Aktion',
+      waterVolumeLiters: 1,
+      notes: ''
+    });
+  };
+
+  const handleSaveQuickAction = () => {
+    const currentActions = currentPlant.sensorConfig?.quickActions || [];
+    const existingIndex = currentActions.findIndex(a => a.id === editingQuickAction.id);
+    let newActions;
+    if (existingIndex >= 0) {
+      newActions = [...currentActions];
+      newActions[existingIndex] = editingQuickAction;
+    } else {
+      newActions = [...currentActions, editingQuickAction];
+    }
+    updatePlant(currentPlant.id, { 
+      sensorConfig: { ...(currentPlant.sensorConfig || {}), quickActions: newActions } 
+    });
+    setEditingQuickAction(null);
+  };
+
+  const handleDeleteQuickAction = (id) => {
+    const currentActions = currentPlant.sensorConfig?.quickActions || [];
+    const newActions = currentActions.filter(a => a.id !== id);
+    updatePlant(currentPlant.id, { 
+      sensorConfig: { ...(currentPlant.sensorConfig || {}), quickActions: newActions } 
+    });
+  };
 
   React.useEffect(() => {
     fetchPlantSensorStates();
@@ -317,27 +372,30 @@ export default function PlantsView() {
                 </div>
               </div>
 
-              <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', borderRadius: '16px', background: 'var(--bg-glass)' }}>
-                <div className="text-xs text-muted mb-4 font-semibold tracking-wider">SOFORTMAßNAHMEN</div>
-                <div style={{ display: 'flex', justifyContent: 'space-around' }}>
-                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <Droplet size={28} className="text-info" />
-                    <span className="text-xs">Wasser</span>
+              {currentPlant?.sensorConfig?.quickActions?.length > 0 && (
+                <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', borderRadius: '16px', background: 'var(--bg-glass)' }}>
+                  <div className="text-xs text-muted mb-4 font-semibold tracking-wider flex-between">
+                    <span>SOFORTMAßNAHMEN</span>
+                    <Settings size={14} className="hover-opacity" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('settings')} />
                   </div>
-                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <FileText size={28} className="text-success" />
-                    <span className="text-xs">Nährstoffe</span>
-                  </div>
-                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <Bug size={28} className="text-warning" />
-                    <span className="text-xs">Abwehrmittel</span>
-                  </div>
-                  <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                    <Scissors size={28} className="text-muted" />
-                    <span className="text-xs">Beschneiden</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '1rem' }}>
+                    {currentPlant.sensorConfig.quickActions.map(action => {
+                      const IconComponent = IconMap[action.icon] || Zap;
+                      const isSuccess = actionFeedback === action.id;
+                      return (
+                        <div key={action.id} onClick={() => handleQuickAction(action)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', transition: 'all 0.2s', transform: isSuccess ? 'scale(1.1)' : 'scale(1)' }}>
+                          {isSuccess ? (
+                            <Check size={28} className={`text-success`} />
+                          ) : (
+                            <IconComponent size={28} className={`text-${action.color}`} />
+                          )}
+                          <span className="text-xs text-center" style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isSuccess ? 'Erfasst' : action.label}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
+              )}
 
               <div style={{ marginTop: '1rem' }}>
                 <div className="text-xs text-muted mb-3 font-semibold tracking-wider">{activeTab === 'log' ? 'NEUER EINTRAG' : activeTab === 'settings' ? 'EINSTELLUNGEN' : 'HISTORIE'}</div>
@@ -490,6 +548,86 @@ export default function PlantsView() {
                         <label className="text-xs text-muted mb-1 block">Soil Temperature Sensor Entity ID</label>
                         <input type="text" className="input-premium" value={currentPlant.sensorConfig?.soilTemp || ''} onChange={(e) => updatePlant(currentPlant.id, { sensorConfig: { ...(currentPlant.sensorConfig || {}), soilTemp: e.target.value } })} placeholder="sensor.temp_1" />
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                  <div className="flex-between mb-3">
+                    <h3 className="text-md text-primary m-0">Sofortmaßnahmen</h3>
+                    <button className="btn btn-secondary" onClick={handleAddQuickAction} style={{ padding: '4px 8px', fontSize: '0.8rem' }}>
+                      <Plus size={16} className="mr-1" /> Add
+                    </button>
+                  </div>
+                  
+                  {editingQuickAction ? (
+                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
+                      <div className="mb-3">
+                        <label className="text-xs text-muted mb-1 block">Label</label>
+                        <input type="text" className="input-premium" value={editingQuickAction.label} onChange={(e) => setEditingQuickAction({...editingQuickAction, label: e.target.value})} />
+                      </div>
+                      <div className="flex-between gap-2 mb-3">
+                        <div style={{ flex: 1 }}>
+                          <label className="text-xs text-muted mb-1 block">Icon</label>
+                          <select className="input-premium" value={editingQuickAction.icon} onChange={(e) => setEditingQuickAction({...editingQuickAction, icon: e.target.value})}>
+                            <option value="Droplet">Droplet</option>
+                            <option value="FileText">FileText</option>
+                            <option value="Bug">Bug</option>
+                            <option value="Scissors">Scissors</option>
+                            <option value="Activity">Activity</option>
+                            <option value="Zap">Zap</option>
+                          </select>
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label className="text-xs text-muted mb-1 block">Color</label>
+                          <select className="input-premium" value={editingQuickAction.color} onChange={(e) => setEditingQuickAction({...editingQuickAction, color: e.target.value})}>
+                            <option value="info">Blue</option>
+                            <option value="success">Green</option>
+                            <option value="warning">Yellow</option>
+                            <option value="error">Red</option>
+                            <option value="muted">Gray</option>
+                            <option value="primary">Purple</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex-between gap-2 mb-3">
+                        <div style={{ flex: 1 }}>
+                          <label className="text-xs text-muted mb-1 block">Water (Liters)</label>
+                          <input type="number" step="0.1" className="input-premium" value={editingQuickAction.waterVolumeLiters} onChange={(e) => setEditingQuickAction({...editingQuickAction, waterVolumeLiters: parseFloat(e.target.value) || 0})} />
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <label className="text-xs text-muted mb-1 block">Notes</label>
+                        <input type="text" className="input-premium" value={editingQuickAction.notes} onChange={(e) => setEditingQuickAction({...editingQuickAction, notes: e.target.value})} />
+                      </div>
+                      <div className="flex-between">
+                        <button className="btn btn-secondary" onClick={() => setEditingQuickAction(null)}>Cancel</button>
+                        <button className="btn btn-primary" onClick={handleSaveQuickAction}>Save Action</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {currentPlant?.sensorConfig?.quickActions?.map(action => {
+                        const IconComponent = IconMap[action.icon] || Zap;
+                        return (
+                          <div key={action.id} className="flex-between" style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                              <IconComponent size={20} className={`text-${action.color}`} />
+                              <div>
+                                <div className="text-sm font-semibold">{action.label}</div>
+                                <div className="text-xs text-muted">{action.waterVolumeLiters}L • {action.notes}</div>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button className="btn btn-secondary" onClick={() => setEditingQuickAction(action)} style={{ padding: '4px 8px' }}><Edit size={14} /></button>
+                              <button className="btn btn-error" onClick={() => handleDeleteQuickAction(action.id)} style={{ padding: '4px 8px' }}><Trash2 size={14} /></button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {(!currentPlant?.sensorConfig?.quickActions || currentPlant.sensorConfig.quickActions.length === 0) && (
+                        <div className="text-xs text-muted text-center py-2">No quick actions defined.</div>
+                      )}
                     </div>
                   )}
                 </div>
