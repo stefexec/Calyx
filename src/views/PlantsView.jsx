@@ -402,6 +402,15 @@ export default function PlantsView() {
                   )}
                 </div>
 
+                <div className="glass mb-6" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255, 0.1)' }}>
+                  <button className="btn btn-primary w-full" onClick={() => {
+                    fetchPlantSensorStates();
+                    // Additional visual feedback could be added here if needed
+                  }}>
+                    Save Settings & Sync Sensors
+                  </button>
+                </div>
+
                 <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(var(--error-rgb), 0.3)' }}>
                   <h3 className="text-md text-error mb-2">Danger Zone</h3>
                   <p className="text-sm text-muted mb-4">Deleting this plant will permanently remove all of its logs, photos, and history.</p>

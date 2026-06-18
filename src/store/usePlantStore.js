@@ -43,6 +43,9 @@ const usePlantStore = create((set, get) => ({
         image: null // Wait for gallery fetch to display profile
       }));
       set({ plants: mapped, isLoading: false });
+      
+      // Auto-fetch sensors after loading plants so they appear on initial page load
+      get().fetchPlantSensorStates();
     } catch (error) {
       console.error("Failed to fetch plants", error);
       set({ isLoading: false });
