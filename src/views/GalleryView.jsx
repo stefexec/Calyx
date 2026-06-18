@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Calendar as CalendarIcon, Tag, Sprout } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Tag, Sprout, Trash2 } from 'lucide-react';
 import useGalleryStore from '../store/useGalleryStore';
 import usePlantStore from '../store/usePlantStore';
 
 export default function GalleryView() {
-  const { images } = useGalleryStore();
+  const { images, deleteGalleryImage } = useGalleryStore();
   const { plants } = usePlantStore();
   const [selectedImage, setSelectedImage] = useState(null);
 
@@ -65,7 +65,19 @@ export default function GalleryView() {
           display: 'flex', 
           flexDirection: 'column'
         }}>
-          <div style={{ padding: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button 
+              className="btn" 
+              onClick={() => {
+                if (window.confirm("Delete this photo?")) {
+                  deleteGalleryImage(selectedImage.id);
+                  setSelectedImage(null);
+                }
+              }} 
+              style={{ padding: '0.5rem', borderRadius: '50%', background: 'rgba(255,0,0,0.2)', color: 'var(--error)', border: '1px solid rgba(var(--error-rgb), 0.4)' }}
+            >
+              <Trash2 size={24} />
+            </button>
             <button className="btn btn-secondary" onClick={() => setSelectedImage(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
               <X size={24} />
             </button>
