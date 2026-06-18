@@ -17,6 +17,6 @@ services:
     container_name: calyx-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3001:80"
     depends_on:
       - calyx-backend
