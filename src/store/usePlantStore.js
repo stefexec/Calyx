@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { fetchApi } from '../utils/api';
+import useSettingsStore from './useSettingsStore';
 
 export const StrainType = {
   PHOTOPERIODIC: 'Photoperiodic',
@@ -81,6 +82,34 @@ const usePlantStore = create((set, get) => ({
       };
 
       set((state) => ({ plants: [...state.plants, newPlant] }));
+      
+      // Automatic harvest task scheduling
+      if (plant.flowerDays) {
+        try {
+          const { defaultVegDays } = useSettingsStore.getState();
+          const germDate = new Date(plant.dateGerminated || new Date());
+          const estHarvestDate = new Date(germDate);
+          
+          if (plant.strainType === StrainType.AUTOFLOWER) {
+            estHarvestDate.setDate(germDate.getDate() + plant.flowerDays);
+          } else {
+            estHarvestDate.setDate(germDate.getDate() + defaultVegDays + plant.flowerDays);
+          }
+          
+          await fetchApi('/tasks/', {
+            method: 'POST',
+            body: JSON.stringify({
+              date: estHarvestDate.toISOString().replace('Z', ''),
+              plant_id: created.id,
+              category: 'harvest',
+              description: `Estimated Harvest Date for ${created.name} (${created.strain})`
+            })
+          });
+        } catch (err) {
+          console.error("Failed to schedule harvest task", err);
+        }
+      }
+
       return newPlant;
     } catch (error) {
       console.error("Failed to add plant", error);

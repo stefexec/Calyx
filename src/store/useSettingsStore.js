@@ -5,6 +5,7 @@ const useSettingsStore = create((set) => ({
   ntfyUrl: 'https://ntfy.gurk.dev',
   ntfyTopic: 'calyx_alerts',
   ntfyToken: '',
+  defaultVegDays: 28,
   isLoading: false,
 
   fetchSettings: async () => {
@@ -18,6 +19,7 @@ const useSettingsStore = create((set) => ({
         ntfyUrl: settingsMap['ntfyUrl'] || 'https://ntfy.gurk.dev',
         ntfyTopic: settingsMap['ntfyTopic'] || 'calyx_alerts',
         ntfyToken: settingsMap['ntfyToken'] || '',
+        defaultVegDays: settingsMap['defaultVegDays'] !== undefined ? parseInt(settingsMap['defaultVegDays']) : 28,
         isLoading: false
       });
     } catch (error) {
@@ -36,6 +38,18 @@ const useSettingsStore = create((set) => ({
       ]);
     } catch (error) {
       console.error("Failed to update settings", error);
+    }
+  },
+
+  updateDefaultVegDays: async (days) => {
+    set({ defaultVegDays: days }); // Optimistic UI update
+    try {
+      await fetchApi('/settings/defaultVegDays', { 
+        method: 'PUT', 
+        body: JSON.stringify({ key: 'defaultVegDays', value: days.toString() }) 
+      });
+    } catch (error) {
+      console.error("Failed to update veg days", error);
     }
   }
 }));

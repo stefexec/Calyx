@@ -53,6 +53,8 @@ class GrowLogBase(BaseModel):
     water_amount: Optional[float] = None
     ec: Optional[float] = None
     ph: Optional[float] = None
+    recipe_id: Optional[str] = None
+    recipe_scale: Optional[int] = None
     notes: Optional[str] = None
 
 class GrowLogCreate(GrowLogBase):

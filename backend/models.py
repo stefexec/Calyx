@@ -39,6 +39,8 @@ class GrowLog(Base):
     water_amount = Column(Float, nullable=True)
     ec = Column(Float, nullable=True)
     ph = Column(Float, nullable=True)
+    recipe_id = Column(String, nullable=True)
+    recipe_scale = Column(Integer, nullable=True)
     notes = Column(String, nullable=True)
 
 class GalleryImage(Base):

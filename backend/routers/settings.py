@@ -26,3 +26,22 @@ def set_setting(key: str, setting: schemas.AppSettingCreate, db: Session = Depen
 @router.get("/", response_model=List[schemas.AppSettingOut])
 def get_all_settings(db: Session = Depends(get_db)):
     return db.query(models.AppSetting).all()
+
+@router.get("/strains/search")
+def search_strains(q: str = ""):
+    import json
+    import os
+    
+    file_path = os.path.join(os.path.dirname(__file__), "..", "strains.json")
+    try:
+        with open(file_path, "r") as f:
+            strains = json.load(f)
+            
+        if not q:
+            return strains[:10]
+            
+        q_lower = q.lower()
+        results = [s for s in strains if q_lower in s["name"].lower()]
+        return results[:15]
+    except Exception as e:
+        return []

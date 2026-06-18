@@ -24,7 +24,9 @@ const useGrowLogStore = create((set, get) => ({
         waterVolumeLiters: log.water_amount,
         ecInput: log.ec,
         phInput: log.ph,
-        notes: log.notes
+        notes: log.notes,
+        appliedRecipeId: log.recipe_id,
+        recipeScale: log.recipe_scale
       }));
       
       set((state) => {
@@ -45,7 +47,9 @@ const useGrowLogStore = create((set, get) => ({
         water_amount: log.waterVolumeLiters,
         ec: log.ecInput,
         ph: log.phInput,
-        notes: log.notes || log.appliedRecipeId ? `Recipe ID: ${log.appliedRecipeId}` : null
+        recipe_id: log.appliedRecipeId,
+        recipe_scale: log.recipeScale,
+        notes: log.notes
       };
 
       const created = await fetchApi('/logs/', {
@@ -61,7 +65,8 @@ const useGrowLogStore = create((set, get) => ({
         ecInput: created.ec,
         phInput: created.ph,
         notes: created.notes,
-        appliedRecipeId: log.appliedRecipeId
+        appliedRecipeId: created.recipe_id,
+        recipeScale: created.recipe_scale
       };
 
       set((state) => ({ 

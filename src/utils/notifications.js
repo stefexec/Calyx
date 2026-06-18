@@ -20,11 +20,16 @@ export async function sendNotification(title, message, priority = 'default') {
     // Clean trailing slashes from URL
     const baseUrl = ntfyUrl.replace(/\/$/, '');
 
+    const payload = {
+      topic: ntfyTopic,
+      message: message,
+      title: title,
+      priority: parseInt(ntfyPriority, 10),
+      tags: ['warning', 'leaves']
+    };
+
     const headers = {
-      'Title': title,
-      'Priority': ntfyPriority,
-      'Tags': 'warning,leaves',
-      'Content-Type': 'text/plain' // Explicitly set content type
+      'Content-Type': 'application/json'
     };
 
     if (ntfyToken && ntfyToken.trim() !== '') {
@@ -34,9 +39,10 @@ export async function sendNotification(title, message, priority = 'default') {
       headers['Authorization'] = `Bearer ${ntfyToken}`;
     }
 
-    const response = await fetch(`${baseUrl}/${ntfyTopic}`, {
+    // Ntfy JSON publishing requires POSTing to the root URL
+    const response = await fetch(`${baseUrl}/`, {
       method: 'POST',
-      body: message,
+      body: JSON.stringify(payload),
       headers: headers
     });
     

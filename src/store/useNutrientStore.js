@@ -42,6 +42,15 @@ const useNutrientStore = create((set, get) => ({
     }
   },
 
+  deleteProduct: async (id) => {
+    try {
+      await fetchApi(`/nutrients/products/${id}`, { method: 'DELETE' });
+      set((state) => ({ products: state.products.filter(p => p.id !== id) }));
+    } catch (error) {
+      console.error("Failed to delete product", error);
+    }
+  },
+
   addRecipe: async (recipe) => {
     try {
       const created = await fetchApi('/nutrients/recipes', {

@@ -5,6 +5,7 @@ import useGrowLogStore from '../store/useGrowLogStore';
 import useGalleryStore from '../store/useGalleryStore';
 import useNutrientStore from '../store/useNutrientStore';
 import useEnvironmentStore from '../store/useEnvironmentStore';
+import { fetchApi } from '../utils/api';
 import { Plus, Droplet, Activity, X, Camera, Search, Settings, FileText, BarChart2 } from 'lucide-react';
 import { differenceInDays, startOfDay } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -19,21 +20,16 @@ export default function PlantsView() {
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [activeTab, setActiveTab] = useState('log');
   const [historyTab, setHistoryTab] = useState('actions');
-  const [logForm, setLogForm] = useState({ waterVolume: 1.0, phInput: 6.2, ecInput: 1.2, recipeId: '' });
+  const [logForm, setLogForm] = useState({ waterVolume: 1.0, phInput: 6.2, ecInput: 1.2, recipeId: '', recipeScale: 100 });
   const [logImage, setLogImage] = useState(null);
   const [logImageFile, setLogImageFile] = useState(null);
   const logImageInputRef = useRef(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newPlant, setNewPlant] = useState({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null, imageFile: null });
+  const [newPlant, setNewPlant] = useState({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null, imageFile: null, flowerDays: null });
   const [strainQuery, setStrainQuery] = useState('');
+  const [strainResults, setStrainResults] = useState([]);
   const fileInputRef = useRef(null);
-
-  const mockStrainDb = [
-    { name: 'Super Lemon Haze', type: StrainType.PHOTOPERIODIC, flowerDays: 70 },
-    { name: 'Northern Lights Auto', type: StrainType.AUTOFLOWER, flowerDays: 55 },
-    { name: 'White Widow', type: StrainType.PHOTOPERIODIC, flowerDays: 60 }
-  ];
 
   const currentPlant = selectedPlant ? plants.find(p => p.id === selectedPlant.id) || selectedPlant : null;
 
@@ -54,7 +50,8 @@ export default function PlantsView() {
       waterVolumeLiters: logForm.waterVolume,
       phInput: (currentPlant.trackPH ?? true) ? logForm.phInput : null,
       ecInput: (currentPlant.trackEC ?? true) ? logForm.ecInput : null,
-      appliedRecipeId: logForm.recipeId
+      appliedRecipeId: logForm.recipeId,
+      recipeScale: logForm.recipeScale
     });
     
     if (logImageFile) {
@@ -72,6 +69,24 @@ export default function PlantsView() {
     
     setActiveTab('charts');
     setHistoryTab('actions');
+    setLogImage(null);
+    setLogImageFile(null);
+  };
+
+  const handleSavePhotoOnly = async () => {
+    if (!currentPlant || !logImageFile) return;
+
+    let days = 0;
+    if (currentPlant.dateGerminated) {
+      days = Math.floor((new Date() - new Date(currentPlant.dateGerminated)) / (1000 * 60 * 60 * 24));
+    }
+
+    await addGalleryImage({
+      plantId: currentPlant.id,
+      phase: currentPlant.currentPhase,
+      daysSinceGermination: days
+    }, logImageFile);
+
     setLogImage(null);
     setLogImageFile(null);
   };
@@ -99,8 +114,36 @@ export default function PlantsView() {
   };
 
   const handleStrainSelect = (strain) => {
-    setNewPlant({...newPlant, strainName: strain.name, strainType: strain.type});
+    setNewPlant({...newPlant, strainName: strain.name, strainType: strain.type, flowerDays: strain.flowerDays});
     setStrainQuery(strain.name);
+    setStrainResults([]);
+  };
+
+  const handleStrainSearch = async (query) => {
+    setStrainQuery(query);
+    
+    // If user starts typing something else, clear the selected strain so the dropdown can reappear
+    if (newPlant.strainName && query !== newPlant.strainName) {
+      setNewPlant({...newPlant, strainName: '', flowerDays: null});
+    }
+
+    if (!query) {
+      setStrainResults([]);
+      return;
+    }
+    try {
+      const results = await fetchApi(`/settings/strains/search?q=${encodeURIComponent(query)}`);
+      setStrainResults(results);
+    } catch (err) {
+      console.error('Failed to search strains', err);
+    }
+  };
+
+  const closeAddModal = () => {
+    setShowAddModal(false);
+    setNewPlant({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null, imageFile: null, flowerDays: null });
+    setStrainQuery('');
+    setStrainResults([]);
   };
 
   const handleAddPlant = async (e) => {
@@ -120,9 +163,7 @@ export default function PlantsView() {
       }, newPlant.imageFile);
     }
 
-    setShowAddModal(false);
-    setNewPlant({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null, imageFile: null });
-    setStrainQuery('');
+    closeAddModal();
   };
 
   // Helper to get latest image
@@ -187,8 +228,15 @@ export default function PlantsView() {
               <form onSubmit={handleLogSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div className="flex-center" style={{ flexDirection: 'column', gap: '0.5rem' }}>
                   <input type="file" accept="image/*" ref={logImageInputRef} onChange={handleLogImageUpload} style={{ display: 'none' }} />
-                  <div onClick={() => logImageInputRef.current.click()} style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}>
-                    {logImage ? <img src={logImage} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Camera size={24} className="text-muted" />}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div onClick={() => logImageInputRef.current.click()} style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(0,0,0,0.3)', border: '2px dashed var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}>
+                      {logImage ? <img src={logImage} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Camera size={24} className="text-muted" />}
+                    </div>
+                    {logImageFile && (
+                      <button type="button" className="btn btn-secondary" onClick={handleSavePhotoOnly} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
+                        Save Photo Only
+                      </button>
+                    )}
                   </div>
                   <span className="text-xs text-muted">Quick Photo (updates profile)</span>
                 </div>
@@ -236,6 +284,40 @@ export default function PlantsView() {
                     ))}
                   </select>
                 </div>
+
+                {logForm.recipeId && (
+                  <div className="glass p-4" style={{ borderRadius: 'var(--radius-md)' }}>
+                    <div className="flex-between mb-3">
+                      <label className="text-sm text-primary font-semibold">Calculator</label>
+                      <span className="text-xs text-muted">For {logForm.waterVolume}L</span>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="text-xs text-muted mb-2 flex-between">
+                        <span>Strength Scale</span>
+                        <span className="font-semibold text-info">{logForm.recipeScale}%</span>
+                      </label>
+                      <input type="range" min="10" max="200" step="10" value={logForm.recipeScale} onChange={(e) => setLogForm({...logForm, recipeScale: parseInt(e.target.value)})} style={{ width: '100%' }} />
+                      <div className="flex-between text-xs text-muted mt-1" style={{ opacity: 0.6 }}>
+                        <span>Seedling (25%)</span>
+                        <span>Normal (100%)</span>
+                        <span>Heavy (150%)</span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {recipes.find(r => r.id === logForm.recipeId)?.ingredients.map(ing => {
+                        const amount = (ing.mlPerLiter * logForm.waterVolume * (logForm.recipeScale / 100)).toFixed(1);
+                        return (
+                          <div key={ing.productId} className="flex-between p-2" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
+                            <span className="text-sm">{ing.name || 'Product'}</span>
+                            <span className="text-sm font-semibold text-success">{amount} ml</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Save Log</button>
               </form>
@@ -375,7 +457,7 @@ export default function PlantsView() {
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="flex-between mb-6">
               <h2>Add New Plant</h2>
-              <button className="btn btn-secondary" onClick={() => setShowAddModal(false)} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
+              <button className="btn btn-secondary" type="button" onClick={closeAddModal} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
             </div>
 
             <form onSubmit={handleAddPlant} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -402,22 +484,31 @@ export default function PlantsView() {
               </div>
 
               <div style={{ position: 'relative' }}>
-                <label className="text-sm text-muted mb-2 block">Strain Search (StrainDB API Mock)</label>
+                <label className="text-sm text-muted mb-2 block">Strain Search (Offline DB)</label>
                 <div className="input-premium" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 1rem' }}>
                   <Search size={16} className="text-muted" />
-                  <input type="text" style={{ flex: 1, background: 'transparent', border: 'none', color: 'inherit', outline: 'none', padding: '0.75rem 0' }} value={strainQuery} onChange={e => setStrainQuery(e.target.value)} placeholder="Search strain..." />
+                  <input type="text" style={{ flex: 1, background: 'transparent', border: 'none', color: 'inherit', outline: 'none', padding: '0.75rem 0' }} value={strainQuery} onChange={e => handleStrainSearch(e.target.value)} placeholder="Search strain..." />
                 </div>
-                {strainQuery && !newPlant.strainName && (
-                  <div className="glass" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, marginTop: '0.25rem', borderRadius: 'var(--radius-md)', padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    {mockStrainDb.filter(s => s.name.toLowerCase().includes(strainQuery.toLowerCase())).map(strain => (
+                {strainQuery && !newPlant.strainName && strainResults.length > 0 && (
+                  <div className="glass" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, marginTop: '0.25rem', borderRadius: 'var(--radius-md)', padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '200px', overflowY: 'auto' }}>
+                    {strainResults.map(strain => (
                       <div key={strain.name} onClick={() => handleStrainSelect(strain)} style={{ padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', background: 'rgba(255,255,255,0.05)' }}>
                         <div className="font-semibold text-sm">{strain.name}</div>
-                        <div className="text-xs text-primary">{strain.type} • {strain.flowerDays} Days</div>
+                        <div className="text-xs text-primary" style={{ marginBottom: '2px' }}>{strain.type} {strain.flowerDays ? `• ${strain.flowerDays} Days` : ''} {strain.feminized === 'Feminized' ? '• Fem' : ''}</div>
+                        {(strain.breeder || strain.parents) && (
+                          <div className="text-xs text-muted" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', opacity: 0.8 }}>
+                            {strain.breeder && <span>Breeder: {strain.breeder}</span>}
+                            {strain.breeder && strain.parents && <span>|</span>}
+                            {strain.parents && <span>Genetics: {strain.parents}</span>}
+                          </div>
+                        )}
                       </div>
                     ))}
-                    {mockStrainDb.filter(s => s.name.toLowerCase().includes(strainQuery.toLowerCase())).length === 0 && (
-                      <div className="text-xs text-muted p-2">No strains found. Type manually.</div>
-                    )}
+                  </div>
+                )}
+                {strainQuery && !newPlant.strainName && strainResults.length === 0 && (
+                  <div className="glass" style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10, marginTop: '0.25rem', borderRadius: 'var(--radius-md)', padding: '0.5rem' }}>
+                    <div className="text-xs text-muted p-2">No strains found. Type manually.</div>
                   </div>
                 )}
               </div>
