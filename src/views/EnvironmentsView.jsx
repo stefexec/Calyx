@@ -2,16 +2,23 @@ import useEnvironmentStore, { GrowMedium } from '../store/useEnvironmentStore';
 import { Settings, Settings2, Sun, Moon, Database, Power, Wind, Droplets, BellRing, Plus, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { sendNotification } from '../utils/notifications';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function EnvironmentsView() {
-  const { environments, togglePlug, addEnvironment, updatePlugConfig, updateEnvironment } = useEnvironmentStore();
+  const { environments, togglePlug, addEnvironment, updatePlugConfig, updateEnvironment, fetchHistory, fetchPlugStates } = useEnvironmentStore();
   const [showModal, setShowModal] = useState(false);
   const [newEnv, setNewEnv] = useState({ name: '', growMedium: GrowMedium.SOIL, lightHoursOn: 18, lightHoursOff: 6 });
   const [selectedEnvForSettings, setSelectedEnvForSettings] = useState(null);
 
-
+  useEffect(() => {
+    environments.forEach(env => {
+      if (env.tempSensor && (!env.history || env.history.length === 0)) {
+        fetchHistory(env.id);
+      }
+    });
+    fetchPlugStates();
+  }, [environments.length]);
 
   const handleTestAlarm = async () => {
     await sendNotification('🚨 LIGHT LEAK ALARM', 'Lux sensor detected light during Dark Phase in Tent #1!', 'high');
@@ -222,6 +229,37 @@ export default function EnvironmentsView() {
                       updateEnvironment(selectedEnvForSettings.id, { lightHoursOn, lightHoursOff });
                     }} style={{ width: '100%' }} />
                   </div>
+                </div>
+              </div>
+
+              <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                <h3 className="text-md text-primary mb-3">Sensor Mapping</h3>
+                <div className="mb-3">
+                  <label className="text-xs text-muted mb-1 block">Temperature Sensor Entity ID</label>
+                  <input type="text" className="input-premium" value={selectedEnvForSettings.tempSensor || ''} onChange={(e) => {
+                    const tempSensor = e.target.value;
+                    setSelectedEnvForSettings(s => ({...s, tempSensor}));
+                    const updatedHaSensors = [tempSensor, selectedEnvForSettings.rhSensor || '', selectedEnvForSettings.luxSensor || ''];
+                    updateEnvironment(selectedEnvForSettings.id, { homeAssistantSensors: updatedHaSensors });
+                  }} placeholder="e.g. sensor.tent_temperature" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted mb-1 block">Humidity Sensor Entity ID</label>
+                  <input type="text" className="input-premium" value={selectedEnvForSettings.rhSensor || ''} onChange={(e) => {
+                    const rhSensor = e.target.value;
+                    setSelectedEnvForSettings(s => ({...s, rhSensor}));
+                    const updatedHaSensors = [selectedEnvForSettings.tempSensor || '', rhSensor, selectedEnvForSettings.luxSensor || ''];
+                    updateEnvironment(selectedEnvForSettings.id, { homeAssistantSensors: updatedHaSensors });
+                  }} placeholder="e.g. sensor.tent_humidity" />
+                </div>
+                <div className="mt-3">
+                  <label className="text-xs text-muted mb-1 block">Lux Sensor Entity ID (for Light Bleed Alerts)</label>
+                  <input type="text" className="input-premium" value={selectedEnvForSettings.luxSensor || ''} onChange={(e) => {
+                    const luxSensor = e.target.value;
+                    setSelectedEnvForSettings(s => ({...s, luxSensor}));
+                    const updatedHaSensors = [selectedEnvForSettings.tempSensor || '', selectedEnvForSettings.rhSensor || '', luxSensor];
+                    updateEnvironment(selectedEnvForSettings.id, { homeAssistantSensors: updatedHaSensors });
+                  }} placeholder="e.g. sensor.tent_lux" />
                 </div>
               </div>
 

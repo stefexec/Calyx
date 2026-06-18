@@ -5,6 +5,9 @@ const useSettingsStore = create((set) => ({
   ntfyUrl: 'https://ntfy.gurk.dev',
   ntfyTopic: 'calyx_alerts',
   ntfyToken: '',
+  haUrl: '',
+  haToken: '',
+  luxThreshold: 10,
   defaultVegDays: 28,
   isLoading: false,
 
@@ -19,6 +22,9 @@ const useSettingsStore = create((set) => ({
         ntfyUrl: settingsMap['ntfyUrl'] || 'https://ntfy.gurk.dev',
         ntfyTopic: settingsMap['ntfyTopic'] || 'calyx_alerts',
         ntfyToken: settingsMap['ntfyToken'] || '',
+        haUrl: settingsMap['haUrl'] || '',
+        haToken: settingsMap['haToken'] || '',
+        luxThreshold: settingsMap['luxThreshold'] !== undefined ? parseInt(settingsMap['luxThreshold']) : 10,
         defaultVegDays: settingsMap['defaultVegDays'] !== undefined ? parseInt(settingsMap['defaultVegDays']) : 28,
         isLoading: false
       });
@@ -41,6 +47,18 @@ const useSettingsStore = create((set) => ({
     }
   },
 
+  updateHaSettings: async (url, token) => {
+    set({ haUrl: url, haToken: token });
+    try {
+      await Promise.all([
+        fetchApi('/settings/haUrl', { method: 'PUT', body: JSON.stringify({ key: 'haUrl', value: url }) }),
+        fetchApi('/settings/haToken', { method: 'PUT', body: JSON.stringify({ key: 'haToken', value: token }) })
+      ]);
+    } catch (error) {
+      console.error("Failed to update HA settings", error);
+    }
+  },
+
   updateDefaultVegDays: async (days) => {
     set({ defaultVegDays: days }); // Optimistic UI update
     try {
@@ -50,6 +68,18 @@ const useSettingsStore = create((set) => ({
       });
     } catch (error) {
       console.error("Failed to update veg days", error);
+    }
+  },
+
+  updateLuxThreshold: async (threshold) => {
+    set({ luxThreshold: threshold });
+    try {
+      await fetchApi('/settings/luxThreshold', { 
+        method: 'PUT', 
+        body: JSON.stringify({ key: 'luxThreshold', value: threshold.toString() }) 
+      });
+    } catch (error) {
+      console.error("Failed to update lux threshold", error);
     }
   }
 }));

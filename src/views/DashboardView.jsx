@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 export default function DashboardView() {
-  const { environments } = useEnvironmentStore();
+  const { environments, fetchHistory } = useEnvironmentStore();
   const { plants } = usePlantStore();
   const { tasks, addTask, toggleTaskCompletion } = useTaskStore();
 
@@ -26,12 +26,27 @@ export default function DashboardView() {
     if (selectedDateRef.current) {
       selectedDateRef.current.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
     }
-  }, []); // Only scroll to center on initial mount
+    environments.forEach(env => {
+      if (env.tempSensor && (!env.history || env.history.length === 0)) {
+        fetchHistory(env.id);
+      }
+    });
+  }, [environments.length]); // Scroll once, fetch once per new environment
 
-  // Mock HA Data for demonstration
-  const getMockHAData = (envId) => {
-    if (envId === '1') return { temp: 24.5, rh: 65, vpd: 0.8 };
-    return { temp: 26.0, rh: 50, vpd: 1.2 };
+  const getHAData = (env) => {
+    if (env.history && env.history.length > 0) {
+      const latest = env.history[env.history.length - 1];
+      const temp = latest.temp;
+      const rh = latest.rh;
+      
+      // Calculate VPD
+      const svp = 0.61078 * Math.exp((17.27 * temp) / (temp + 237.3));
+      const avp = svp * (rh / 100);
+      const vpd = (svp - avp).toFixed(2);
+      
+      return { temp: temp.toFixed(1), rh: rh.toFixed(1), vpd };
+    }
+    return { temp: '--', rh: '--', vpd: '--' };
   };
 
   return (
@@ -91,7 +106,7 @@ export default function DashboardView() {
       <h2 className="text-lg mb-4">Environment Metrics</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
         {environments.map(env => {
-          const ha = getMockHAData(env.id);
+          const ha = getHAData(env);
           return (
             <div key={env.id} className="glass-card">
               <h3 className="mb-4">{env.name}</h3>

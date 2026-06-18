@@ -4,9 +4,10 @@ import { Database, Link, Wrench, Bell, Sprout, X, Plus, Trash2, Save } from 'luc
 import useSettingsStore from '../store/useSettingsStore';
 import useNutrientStore from '../store/useNutrientStore';
 import { sendNotification } from '../utils/notifications';
+import { fetchApi } from '../utils/api';
 
 export default function SettingsView() {
-  const { ntfyUrl, ntfyTopic, ntfyToken, defaultVegDays, updateNtfySettings, updateDefaultVegDays } = useSettingsStore();
+  const { ntfyUrl, ntfyTopic, ntfyToken, haUrl, haToken, defaultVegDays, luxThreshold, updateNtfySettings, updateHaSettings, updateDefaultVegDays, updateLuxThreshold } = useSettingsStore();
   const { products, recipes, addProduct, deleteProduct, addRecipe, deleteRecipe } = useNutrientStore();
   
   const [showNutrientModal, setShowNutrientModal] = useState(false);
@@ -62,6 +63,15 @@ export default function SettingsView() {
     await sendNotification("Test Alert! 🚀", "This is a test message from Calyx settings.", "high");
   };
 
+  const handleTestHaConnection = async () => {
+    try {
+      await fetchApi('/ha/test');
+      alert("Home Assistant Connection Successful!");
+    } catch (e) {
+      alert(`Error connecting to Home Assistant: ${e.message}`);
+    }
+  };
+
   return (
     <div className="page-container">
       <h1 className="mb-6">Settings & Integrations</h1>
@@ -75,13 +85,13 @@ export default function SettingsView() {
           <p className="text-sm text-muted mb-4">Connect to your local Home Assistant instance to pull real-time environment data and control smart plugs.</p>
           <div className="mb-4">
             <label className="text-xs text-muted mb-1 block">HA URL</label>
-            <input type="text" className="input-premium" placeholder="http://homeassistant.local:8123" defaultValue="http://homeassistant.local:8123" />
+            <input type="text" className="input-premium" placeholder="http://homeassistant.local:8123" value={haUrl} onChange={(e) => updateHaSettings(e.target.value, haToken)} />
           </div>
           <div className="mb-4">
             <label className="text-xs text-muted mb-1 block">Long-Lived Access Token</label>
-            <input type="password" className="input-premium" placeholder="ey..." defaultValue="mock-token" />
+            <input type="password" className="input-premium" placeholder="ey..." value={haToken} onChange={(e) => updateHaSettings(haUrl, e.target.value)} />
           </div>
-          <button className="btn btn-secondary w-full">Test Connection</button>
+          <button className="btn btn-secondary w-full" onClick={handleTestHaConnection}>Test Connection</button>
         </div>
 
         <div className="glass-card">
@@ -128,6 +138,16 @@ export default function SettingsView() {
               value={defaultVegDays} 
               onChange={(e) => updateDefaultVegDays(parseInt(e.target.value) || 0)} 
             />
+          </div>
+          <div className="mb-4">
+            <label className="text-xs text-muted mb-1 block">Lux Sensor Light Bleed Threshold</label>
+            <input 
+              type="number" 
+              className="input-premium" 
+              value={luxThreshold} 
+              onChange={(e) => updateLuxThreshold(parseInt(e.target.value) || 0)} 
+            />
+            <p className="text-xs text-muted mt-1">If your tent's lux sensor exceeds this value while the light plug is OFF, you will receive a high-priority push notification.</p>
           </div>
         </div>
 
