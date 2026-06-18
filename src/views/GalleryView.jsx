@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Calendar as CalendarIcon, Tag, Sprout, Trash2 } from 'lucide-react';
+import { X, Calendar as CalendarIcon, Tag, Sprout, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import useGalleryStore from '../store/useGalleryStore';
 import usePlantStore from '../store/usePlantStore';
 
@@ -8,12 +8,43 @@ export default function GalleryView() {
   const { images, deleteGalleryImage } = useGalleryStore();
   const { plants } = usePlantStore();
   const [selectedImage, setSelectedImage] = useState(null);
+  const [collapsedPlants, setCollapsedPlants] = useState({});
 
-  // Sort images by timestamp descending (newest first)
-  const sortedImages = [...images].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const getPlant = (plantId) => {
+    return plants.find(p => p.id === plantId);
+  };
 
   const getPlantName = (plantId) => {
-    return plants.find(p => p.id === plantId)?.name || 'Unknown Plant';
+    return getPlant(plantId)?.name || 'Unknown Plant';
+  };
+
+  const getPlantStartDate = (plantId) => {
+    const plant = getPlant(plantId);
+    if (!plant || !plant.dateGerminated) return null;
+    return new Date(plant.dateGerminated).toLocaleDateString();
+  };
+
+  // Group images by plantId
+  const groupedImages = images.reduce((acc, img) => {
+    if (!acc[img.plantId]) acc[img.plantId] = [];
+    acc[img.plantId].push(img);
+    return acc;
+  }, {});
+
+  // Sort inside each group (newest first)
+  Object.keys(groupedImages).forEach(plantId => {
+    groupedImages[plantId].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  });
+
+  // Sort plant groups by the timestamp of their newest image
+  const sortedPlantIds = Object.keys(groupedImages).sort((a, b) => {
+    const aNewest = groupedImages[a][0]?.timestamp;
+    const bNewest = groupedImages[b][0]?.timestamp;
+    return new Date(bNewest) - new Date(aNewest);
+  });
+
+  const toggleCollapse = (plantId) => {
+    setCollapsedPlants(prev => ({ ...prev, [plantId]: !prev[plantId] }));
   };
 
   return (
@@ -25,33 +56,70 @@ export default function GalleryView() {
         </div>
       </div>
 
-      {sortedImages.length === 0 ? (
+      {sortedPlantIds.length === 0 ? (
         <div className="flex-center text-muted" style={{ height: '50vh', flexDirection: 'column', gap: '1rem' }}>
           <div className="glass flex-center" style={{ width: 64, height: 64, borderRadius: '50%' }}>📸</div>
           <p>No photos yet. Add some in the Plant Log!</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.5rem' }}>
-          {sortedImages.map(img => (
-            <div 
-              key={img.id} 
-              onClick={() => setSelectedImage(img)}
-              style={{ 
-                aspectRatio: '1', 
-                borderRadius: 'var(--radius-sm)', 
-                overflow: 'hidden', 
-                cursor: 'pointer',
-                background: 'var(--bg-glass)',
-                border: '1px solid var(--border)'
-              }}
-            >
-              <img 
-                src={img.fileUrl} 
-                alt={getPlantName(img.plantId)} 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-              />
-            </div>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {sortedPlantIds.map(plantId => {
+            const plantImages = groupedImages[plantId];
+            const isCollapsed = collapsedPlants[plantId];
+            const startDate = getPlantStartDate(plantId);
+            
+            return (
+              <div key={plantId}>
+                <div 
+                  className="flex-between glass" 
+                  onClick={() => toggleCollapse(plantId)}
+                  style={{ 
+                    padding: '0.75rem 1rem', 
+                    borderRadius: 'var(--radius-md)', 
+                    cursor: 'pointer',
+                    marginBottom: '0.75rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {isCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} />}
+                    <h2 className="text-md font-semibold" style={{ margin: 0 }}>{getPlantName(plantId)}</h2>
+                    <span className="text-muted text-sm ml-2">({plantImages.length})</span>
+                  </div>
+                  {startDate && (
+                    <div className="text-sm text-muted flex-center" style={{ gap: '0.25rem' }}>
+                      <CalendarIcon size={14} />
+                      <span className="font-semibold">Started:</span> {startDate}
+                    </div>
+                  )}
+                </div>
+
+                {!isCollapsed && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.5rem' }}>
+                    {plantImages.map(img => (
+                      <div 
+                        key={img.id} 
+                        onClick={() => setSelectedImage(img)}
+                        style={{ 
+                          aspectRatio: '1', 
+                          borderRadius: 'var(--radius-sm)', 
+                          overflow: 'hidden', 
+                          cursor: 'pointer',
+                          background: 'var(--bg-glass)',
+                          border: '1px solid var(--border)'
+                        }}
+                      >
+                        <img 
+                          src={img.fileUrl} 
+                          alt={getPlantName(img.plantId)} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
