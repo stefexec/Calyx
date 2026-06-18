@@ -1,7 +1,7 @@
 
 <!-- Replace with actual logo -->
 <p align="center">
-  <img src="./assets/icon.png" alt="Calyx Logo" width="128" />
+  <img src="./assets/icon.png?v=2" alt="Calyx Logo" width="128" />
 </p>
 
 
@@ -9,9 +9,9 @@
 # Calyx
 
 <p align="center">
-  <img src="./assets/screenshot_1.jpg" width="32%" />
-  <img src="./assets/screenshot_2.jpg" width="32%" />
-  <img src="./assets/screenshot_3.jpg" width="32%" />
+  <img src="./assets/screenshot_1.jpg?v=2" width="32%" />
+  <img src="./assets/screenshot_2.jpg?v=2" width="32%" />
+  <img src="./assets/screenshot_3.jpg?v=2" width="32%" />
 </p>
 
 
