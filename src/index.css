@@ -250,6 +250,10 @@ h1, h2, h3, h4, h5, h6 {
 .text-xs { font-size: 0.75rem; }
 .text-muted { color: var(--text-muted); }
 .text-primary { color: var(--primary); }
+.text-info { color: var(--info); }
+.text-success { color: #10b981; }
+.text-warning { color: var(--warning); }
+.text-error { color: var(--error); }
 .font-semibold { font-weight: 600; }
 
 .w-full { width: 100%; }

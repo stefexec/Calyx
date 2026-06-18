@@ -39,13 +39,23 @@ export default function PlantsView() {
   const [editingQuickAction, setEditingQuickAction] = useState(null);
   const fileInputRef = useRef(null);
 
+  const getActionColor = (type) => {
+    switch(type) {
+      case 'water': return 'info';
+      case 'nutrients': return 'success';
+      case 'bug': return 'warning';
+      case 'trim': return 'muted';
+      default: return 'primary';
+    }
+  };
+
   const handleQuickAction = async (action) => {
     setActionFeedback(action.id);
     await addLog({
       plantId: currentPlant.id,
-      waterVolumeLiters: action.waterVolumeLiters || 0,
-      ecInput: action.ecInput || null,
-      phInput: action.phInput || null,
+      waterVolumeLiters: (action.actionType === 'water' || action.actionType === 'nutrients') ? (action.waterVolumeLiters || 0) : null,
+      ecInput: action.actionType === 'nutrients' ? (action.ecInput || null) : null,
+      phInput: action.actionType === 'nutrients' ? (action.phInput || null) : null,
       notes: action.notes || action.label,
       appliedRecipeId: null,
       recipeScale: 100
@@ -57,7 +67,7 @@ export default function PlantsView() {
     setEditingQuickAction({
       id: 'qa-' + Math.random().toString(36).substr(2, 9),
       icon: 'Droplet',
-      color: 'info',
+      actionType: 'water',
       label: 'Neue Aktion',
       waterVolumeLiters: 1,
       notes: ''
@@ -287,8 +297,8 @@ export default function PlantsView() {
       </div>
 
       {selectedPlant && createPortal(
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg-default)', zIndex: 1000, overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
-          <div style={{ width: '100%', maxWidth: '500px', minHeight: '100%', position: 'relative', background: 'var(--bg-default)', boxShadow: '0 0 40px rgba(0,0,0,0.5)', paddingBottom: '3rem' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg-dark)', zIndex: 1000, overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ width: '100%', maxWidth: '500px', minHeight: '100%', position: 'relative', background: 'var(--bg-dark)', boxShadow: '0 0 40px rgba(0,0,0,0.5)', paddingBottom: '3rem' }}>
             
             <div style={{ position: 'relative', height: '40vh', width: '100%', overflow: 'hidden', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px' }}>
               <div 
@@ -387,7 +397,7 @@ export default function PlantsView() {
                           {isSuccess ? (
                             <Check size={28} className={`text-success`} />
                           ) : (
-                            <IconComponent size={28} className={`text-${action.color}`} />
+                            <IconComponent size={28} className={`text-${getActionColor(action.actionType)}`} />
                           )}
                           <span className="text-xs text-center" style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isSuccess ? 'Erfasst' : action.label}</span>
                         </div>
@@ -579,23 +589,24 @@ export default function PlantsView() {
                           </select>
                         </div>
                         <div style={{ flex: 1 }}>
-                          <label className="text-xs text-muted mb-1 block">Color</label>
-                          <select className="input-premium" value={editingQuickAction.color} onChange={(e) => setEditingQuickAction({...editingQuickAction, color: e.target.value})}>
-                            <option value="info">Blue</option>
-                            <option value="success">Green</option>
-                            <option value="warning">Yellow</option>
-                            <option value="error">Red</option>
-                            <option value="muted">Gray</option>
-                            <option value="primary">Purple</option>
+                          <label className="text-xs text-muted mb-1 block">Action Type</label>
+                          <select className="input-premium" value={editingQuickAction.actionType} onChange={(e) => setEditingQuickAction({...editingQuickAction, actionType: e.target.value})}>
+                            <option value="water">Water</option>
+                            <option value="nutrients">Nutrients</option>
+                            <option value="bug">Bug Treatment</option>
+                            <option value="trim">Pruning</option>
+                            <option value="other">Custom</option>
                           </select>
                         </div>
                       </div>
-                      <div className="flex-between gap-2 mb-3">
-                        <div style={{ flex: 1 }}>
-                          <label className="text-xs text-muted mb-1 block">Water (Liters)</label>
-                          <input type="number" step="0.1" className="input-premium" value={editingQuickAction.waterVolumeLiters} onChange={(e) => setEditingQuickAction({...editingQuickAction, waterVolumeLiters: parseFloat(e.target.value) || 0})} />
+                      {(editingQuickAction.actionType === 'water' || editingQuickAction.actionType === 'nutrients') && (
+                        <div className="flex-between gap-2 mb-3">
+                          <div style={{ flex: 1 }}>
+                            <label className="text-xs text-muted mb-1 block">Water Volume (Liters)</label>
+                            <input type="number" step="0.1" className="input-premium" value={editingQuickAction.waterVolumeLiters} onChange={(e) => setEditingQuickAction({...editingQuickAction, waterVolumeLiters: parseFloat(e.target.value) || 0})} />
+                          </div>
                         </div>
-                      </div>
+                      )}
                       <div className="mb-3">
                         <label className="text-xs text-muted mb-1 block">Notes</label>
                         <input type="text" className="input-premium" value={editingQuickAction.notes} onChange={(e) => setEditingQuickAction({...editingQuickAction, notes: e.target.value})} />
@@ -612,10 +623,13 @@ export default function PlantsView() {
                         return (
                           <div key={action.id} className="flex-between" style={{ background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                              <IconComponent size={20} className={`text-${action.color}`} />
+                              <IconComponent size={20} className={`text-${getActionColor(action.actionType)}`} />
                               <div>
                                 <div className="text-sm font-semibold">{action.label}</div>
-                                <div className="text-xs text-muted">{action.waterVolumeLiters}L • {action.notes}</div>
+                                <div className="text-xs text-muted">
+                                  {(action.actionType === 'water' || action.actionType === 'nutrients') && `${action.waterVolumeLiters}L • `}
+                                  {action.notes}
+                                </div>
                               </div>
                             </div>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
