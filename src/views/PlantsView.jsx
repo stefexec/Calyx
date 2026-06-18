@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import usePlantStore, { PlantPhase, StrainType } from '../store/usePlantStore';
 import useGrowLogStore from '../store/useGrowLogStore';
@@ -11,7 +11,7 @@ import { differenceInDays, startOfDay } from 'date-fns';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function PlantsView() {
-  const { plants, addPlant, updatePlant, toggleMoistureSensor } = usePlantStore();
+  const { plants, addPlant, updatePlant, toggleMoistureSensor, fetchPlantSensorStates, fetchPlantSensorHistory, deletePlant } = usePlantStore();
   const { logs, addLog, fetchLogsForPlant } = useGrowLogStore();
   const { images, addGalleryImage } = useGalleryStore();
   const { recipes } = useNutrientStore();
@@ -29,9 +29,22 @@ export default function PlantsView() {
   const [newPlant, setNewPlant] = useState({ name: '', environmentId: '', strainName: '', strainType: StrainType.PHOTOPERIODIC, image: null, imageFile: null, flowerDays: null });
   const [strainQuery, setStrainQuery] = useState('');
   const [strainResults, setStrainResults] = useState([]);
+  const [selectedLog, setSelectedLog] = useState(null);
   const fileInputRef = useRef(null);
 
+  React.useEffect(() => {
+    fetchPlantSensorStates();
+  }, []);
+
   const currentPlant = selectedPlant ? plants.find(p => p.id === selectedPlant.id) || selectedPlant : null;
+
+  React.useEffect(() => {
+    if (activeTab === 'charts' && historyTab === 'sensors' && currentPlant?.id) {
+      if (!currentPlant.history || currentPlant.history.length === 0) {
+        fetchPlantSensorHistory(currentPlant.id);
+      }
+    }
+  }, [activeTab, historyTab, currentPlant?.id]);
 
   const handleSelectPlant = (plant) => {
     setSelectedPlant(plant);
@@ -122,7 +135,6 @@ export default function PlantsView() {
   const handleStrainSearch = async (query) => {
     setStrainQuery(query);
     
-    // If user starts typing something else, clear the selected strain so the dropdown can reappear
     if (newPlant.strainName && query !== newPlant.strainName) {
       setNewPlant({...newPlant, strainName: '', flowerDays: null});
     }
@@ -166,7 +178,6 @@ export default function PlantsView() {
     closeAddModal();
   };
 
-  // Helper to get latest image
   const getLatestPlantImage = (plantId) => {
     return images.find(img => img.plantId === plantId)?.fileUrl;
   };
@@ -199,6 +210,20 @@ export default function PlantsView() {
                 <span className="text-xs text-primary font-semibold">{plant.currentPhase}</span>
                 <span className="text-xs">Day {daysSinceGermination}</span>
               </div>
+              {plant.hasSoilMoistureSensor && (plant.currentMoistureLevel !== null || plant.currentSoilTemp !== null) && (
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  {plant.currentMoistureLevel !== null && (
+                    <span className="text-xs font-semibold" style={{ background: plant.currentMoistureLevel < 30 ? 'rgba(var(--error-rgb), 0.2)' : 'rgba(var(--info-rgb), 0.2)', color: plant.currentMoistureLevel < 30 ? 'var(--error)' : 'var(--info)', padding: '2px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      💧 {plant.currentMoistureLevel}%
+                    </span>
+                  )}
+                  {plant.currentSoilTemp !== null && (
+                    <span className="text-xs font-semibold" style={{ background: 'rgba(var(--warning-rgb), 0.2)', color: 'var(--warning)', padding: '2px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      🌡️ {plant.currentSoilTemp}°C
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
@@ -363,6 +388,31 @@ export default function PlantsView() {
                       <input type="checkbox" checked={currentPlant.hasSoilMoistureSensor} onChange={(e) => toggleMoistureSensor(currentPlant.id, e.target.checked)} />
                     </label>
                   </div>
+                  {currentPlant.hasSoilMoistureSensor && (
+                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: 'var(--radius-sm)' }}>
+                      <div>
+                        <label className="text-xs text-muted mb-1 block">Soil Moisture Sensor Entity ID</label>
+                        <input type="text" className="input-premium" value={currentPlant.sensorConfig?.soilMoisture || ''} onChange={(e) => updatePlant(currentPlant.id, { sensorConfig: { ...(currentPlant.sensorConfig || {}), soilMoisture: e.target.value } })} placeholder="sensor.moisture_1" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted mb-1 block">Soil Temperature Sensor Entity ID</label>
+                        <input type="text" className="input-premium" value={currentPlant.sensorConfig?.soilTemp || ''} onChange={(e) => updatePlant(currentPlant.id, { sensorConfig: { ...(currentPlant.sensorConfig || {}), soilTemp: e.target.value } })} placeholder="sensor.temp_1" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(var(--error-rgb), 0.3)' }}>
+                  <h3 className="text-md text-error mb-2">Danger Zone</h3>
+                  <p className="text-sm text-muted mb-4">Deleting this plant will permanently remove all of its logs, photos, and history.</p>
+                  <button className="btn btn-error w-full" onClick={() => {
+                    if (window.confirm("Are you absolutely sure you want to delete this plant and all its data?")) {
+                      deletePlant(currentPlant.id);
+                      setSelectedPlant(null);
+                    }
+                  }}>
+                    Delete Plant
+                  </button>
                 </div>
               </div>
             )}
@@ -388,7 +438,7 @@ export default function PlantsView() {
                         {plantLogs.map(log => {
                           const date = new Date(log.timestamp);
                           return (
-                            <div key={log.id} className="glass" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)' }}>
+                            <div key={log.id} onClick={() => setSelectedLog(log)} className="glass hover-opacity" style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer' }}>
                               <div className="flex-between mb-1">
                                 <span className="text-xs text-muted">{date.toLocaleDateString()} {date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                                 <span className="text-xs font-semibold text-info">{log.waterVolumeLiters}L Water</span>
@@ -427,17 +477,6 @@ export default function PlantsView() {
                               <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
                               <Line yAxisId="left" type="monotone" dataKey="moisture" name="Moisture %" stroke="var(--info)" strokeWidth={2} dot={false} />
                               <Line yAxisId="right" type="monotone" dataKey="temp" name="Soil Temp" stroke="var(--warning)" strokeWidth={2} dot={false} />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                        <div style={{ height: '100px', width: '100%', marginTop: '1rem' }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={currentPlant.history} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                              <XAxis dataKey="time" stroke="var(--text-muted)" fontSize={10} tickMargin={5} hide />
-                              <YAxis stroke="var(--secondary)" fontSize={10} />
-                              <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '8px' }} />
-                              <Line type="stepAfter" dataKey="lux" name="Lux (Light)" stroke="var(--secondary)" strokeWidth={2} dot={false} />
                             </LineChart>
                           </ResponsiveContainer>
                         </div>
@@ -529,6 +568,73 @@ export default function PlantsView() {
 
               <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Create Plant</button>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {selectedLog && createPortal(
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex-between mb-6">
+              <h2>Action Log Details</h2>
+              <button className="btn btn-secondary" onClick={() => setSelectedLog(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
+            </div>
+            
+            <div className="mb-4">
+              <div className="text-sm text-muted mb-1">Date & Time</div>
+              <div className="font-semibold">{new Date(selectedLog.timestamp).toLocaleString()}</div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                <div className="text-xs text-muted mb-1">Water Volume</div>
+                <div className="text-lg font-bold text-info">{selectedLog.waterVolumeLiters} L</div>
+              </div>
+              <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                <div className="text-xs text-muted mb-1">pH / EC</div>
+                <div className="text-lg font-bold">
+                  {selectedLog.phInput != null ? selectedLog.phInput : '--'} / {selectedLog.ecInput != null ? selectedLog.ecInput : '--'}
+                </div>
+              </div>
+            </div>
+
+            <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem' }}>
+              <h3 className="text-sm text-primary mb-3">Nutrient Mix</h3>
+              {(() => {
+                if (!selectedLog.appliedRecipeId) return <div className="text-sm text-muted">Plain Water (No nutrients added)</div>;
+                
+                const recipe = recipes.find(r => r.id === selectedLog.appliedRecipeId);
+                if (!recipe) return <div className="text-sm text-muted">Unknown Recipe (Deleted)</div>;
+
+                return (
+                  <div>
+                    <div className="flex-between mb-2">
+                      <span className="font-semibold">{recipe.name}</span>
+                      <span className="text-xs text-accent bg-glass px-2 py-1" style={{ borderRadius: '4px' }}>Scale: {selectedLog.recipeScale}%</span>
+                    </div>
+                    <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                      {recipe.ingredients.map(ing => {
+                        const amount = (ing.mlPerLiter * selectedLog.waterVolumeLiters * (selectedLog.recipeScale / 100)).toFixed(1);
+                        return (
+                          <li key={ing.productId} className="flex-between text-sm" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '0.5rem' }}>
+                            <span>{ing.name}</span>
+                            <span className="font-semibold text-success">{amount} ml</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {selectedLog.notes && (
+              <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                <h3 className="text-sm text-primary mb-2">Notes</h3>
+                <p className="text-sm whitespace-pre-wrap">{selectedLog.notes}</p>
+              </div>
+            )}
           </div>
         </div>,
         document.body

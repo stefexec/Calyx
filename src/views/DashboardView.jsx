@@ -8,7 +8,7 @@ import { createPortal } from 'react-dom';
 
 export default function DashboardView() {
   const { environments, fetchHistory } = useEnvironmentStore();
-  const { plants } = usePlantStore();
+  const { plants, fetchPlantSensorStates } = usePlantStore();
   const { tasks, addTask, toggleTaskCompletion } = useTaskStore();
 
   const [selectedDate, setSelectedDate] = useState(startOfDay(new Date()));
@@ -31,6 +31,7 @@ export default function DashboardView() {
         fetchHistory(env.id);
       }
     });
+    fetchPlantSensorStates();
   }, [environments.length]); // Scroll once, fetch once per new environment
 
   const getHAData = (env) => {

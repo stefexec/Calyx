@@ -34,9 +34,11 @@ const usePlantStore = create((set, get) => ({
         dateFlippedToFlower: plant.date_flipped ? plant.date_flipped + "Z" : null,
         currentPhase: plant.current_phase || PlantPhase.GERMINATION,
         hasSoilMoistureSensor: plant.has_soil_moisture_sensor || false,
+        sensorConfig: plant.sensor_config || { soilMoisture: '', soilTemp: '' },
         trackEC: true, // Default local settings
         trackPH: true,
         currentMoistureLevel: null,
+        currentSoilTemp: null,
         history: [], // Local mock history for charts
         image: null // Wait for gallery fetch to display profile
       }));
@@ -56,7 +58,8 @@ const usePlantStore = create((set, get) => ({
         type: plant.strainType,
         current_phase: plant.currentPhase,
         date_germinated: plant.dateGerminated ? new Date(plant.dateGerminated).toISOString().replace('Z', '') : null,
-        has_soil_moisture_sensor: plant.hasSoilMoistureSensor || false
+        has_soil_moisture_sensor: plant.hasSoilMoistureSensor || false,
+        sensor_config: plant.sensorConfig || { soilMoisture: '', soilTemp: '' }
       };
       
       const created = await fetchApi('/plants/', {
@@ -74,9 +77,11 @@ const usePlantStore = create((set, get) => ({
         dateFlippedToFlower: created.date_flipped ? created.date_flipped + "Z" : null,
         currentPhase: created.current_phase || PlantPhase.GERMINATION,
         hasSoilMoistureSensor: created.has_soil_moisture_sensor || false,
+        sensorConfig: created.sensor_config || { soilMoisture: '', soilTemp: '' },
         trackEC: true,
         trackPH: true,
         currentMoistureLevel: null,
+        currentSoilTemp: null,
         history: [],
         image: plant.image || null
       };
@@ -131,6 +136,7 @@ const usePlantStore = create((set, get) => ({
       if (updatedPlant.dateGerminated !== undefined) payload.date_germinated = updatedPlant.dateGerminated ? new Date(updatedPlant.dateGerminated).toISOString().replace('Z', '') : null;
       if (updatedPlant.dateFlippedToFlower !== undefined) payload.date_flipped = updatedPlant.dateFlippedToFlower ? new Date(updatedPlant.dateFlippedToFlower).toISOString().replace('Z', '') : null;
       if (updatedPlant.hasSoilMoistureSensor !== undefined) payload.has_soil_moisture_sensor = updatedPlant.hasSoilMoistureSensor;
+      if (updatedPlant.sensorConfig !== undefined) payload.sensor_config = updatedPlant.sensorConfig;
 
       // Only send PUT if there are backend fields to update
       if (Object.keys(payload).length > 0) {
@@ -166,6 +172,106 @@ const usePlantStore = create((set, get) => ({
       }));
     } catch (error) {
       console.error("Failed to delete plant", error);
+    }
+  },
+
+  fetchPlantSensorStates: async () => {
+    const plants = get().plants;
+    for (const p of plants) {
+      if (p.sensorConfig) {
+        let updated = false;
+        const newState = { ...p };
+        
+        if (p.sensorConfig.soilMoisture) {
+          try {
+            const res = await fetchApi(`/ha/states/${p.sensorConfig.soilMoisture}`);
+            if (res && res.state) {
+              newState.currentMoistureLevel = parseFloat(res.state);
+              updated = true;
+            }
+          } catch (e) { }
+        }
+        
+        if (p.sensorConfig.soilTemp) {
+          try {
+            const res = await fetchApi(`/ha/states/${p.sensorConfig.soilTemp}`);
+            if (res && res.state) {
+              newState.currentSoilTemp = parseFloat(res.state);
+              updated = true;
+            }
+          } catch (e) { }
+        }
+        
+        if (updated) {
+          set((state) => ({ plants: state.plants.map(plant => plant.id === p.id ? newState : plant) }));
+        }
+      }
+    }
+  },
+
+  fetchPlantSensorHistory: async (plantId) => {
+    const plant = get().plants.find(p => p.id === plantId);
+    if (!plant || !plant.hasSoilMoistureSensor || !plant.sensorConfig) return;
+
+    try {
+      const moistureSensor = plant.sensorConfig.soilMoisture;
+      const tempSensor = plant.sensorConfig.soilTemp;
+      if (!moistureSensor && !tempSensor) return;
+
+      let moistureRes = null;
+      let tempRes = null;
+      
+      if (moistureSensor) moistureRes = await fetchApi(`/ha/history/${moistureSensor}`);
+      if (tempSensor) tempRes = await fetchApi(`/ha/history/${tempSensor}`);
+
+      const historyData = [];
+      const moistureStates = moistureRes && moistureRes.length > 0 ? moistureRes[0] : [];
+      const tempStates = tempRes && tempRes.length > 0 ? tempRes[0] : [];
+      
+      const primaryStates = moistureStates.length > tempStates.length ? moistureStates : tempStates;
+      const secondaryStates = primaryStates === moistureStates ? tempStates : moistureStates;
+
+      if (primaryStates.length > 0) {
+        const step = Math.max(1, Math.floor(primaryStates.length / 24));
+        for (let i = 0; i < primaryStates.length; i += step) {
+          const pState = primaryStates[i];
+          const time = new Date(pState.last_changed).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          
+          let sVal = 0;
+          if (secondaryStates.length > 0) {
+            const pTime = new Date(pState.last_changed).getTime();
+            let closestS = secondaryStates[0];
+            let minDiff = Infinity;
+            
+            for (const s of secondaryStates) {
+              const sTime = new Date(s.last_changed).getTime();
+              const diff = Math.abs(sTime - pTime);
+              if (diff < minDiff) {
+                minDiff = diff;
+                closestS = s;
+              }
+            }
+            if (minDiff < 7200000) {
+              sVal = parseFloat(closestS.state);
+            }
+          }
+
+          const moistureVal = primaryStates === moistureStates ? parseFloat(pState.state) : sVal;
+          const tempVal = primaryStates === tempStates ? parseFloat(pState.state) : sVal;
+
+          historyData.push({
+            time,
+            moisture: moistureVal || 0,
+            temp: tempVal || 0
+          });
+        }
+      }
+
+      set((state) => ({
+        plants: state.plants.map(p => p.id === plantId ? { ...p, history: historyData } : p)
+      }));
+    } catch (error) {
+      console.error("Failed to fetch plant sensor history", error);
     }
   }
 }));

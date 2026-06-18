@@ -29,6 +29,7 @@ class Plant(Base):
     date_germinated = Column(DateTime, nullable=True)
     date_flipped = Column(DateTime, nullable=True)
     has_soil_moisture_sensor = Column(Boolean, default=False)
+    sensor_config = Column(JSON, nullable=True)
 
 class GrowLog(Base):
     __tablename__ = "grow_logs"

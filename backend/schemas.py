@@ -32,6 +32,7 @@ class PlantBase(BaseModel):
     date_germinated: Optional[datetime] = None
     date_flipped: Optional[datetime] = None
     has_soil_moisture_sensor: bool = False
+    sensor_config: Optional[Any] = None
 
 class PlantCreate(PlantBase):
     pass
