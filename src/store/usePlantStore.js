@@ -24,24 +24,29 @@ const usePlantStore = create((set, get) => ({
     set({ isLoading: true });
     try {
       const data = await fetchApi('/plants/');
-      const mapped = data.map(plant => ({
-        id: plant.id,
-        environmentId: plant.environment_id,
-        name: plant.name,
-        strainName: plant.strain || '',
-        strainType: plant.type || StrainType.PHOTOPERIODIC,
-        dateGerminated: plant.date_germinated ? plant.date_germinated + "Z" : null,
-        dateFlippedToFlower: plant.date_flipped ? plant.date_flipped + "Z" : null,
-        currentPhase: plant.current_phase || PlantPhase.GERMINATION,
-        hasSoilMoistureSensor: plant.has_soil_moisture_sensor || false,
-        sensorConfig: plant.sensor_config || { soilMoisture: '', soilTemp: '' },
-        trackEC: true, // Default local settings
-        trackPH: true,
-        currentMoistureLevel: null,
-        currentSoilTemp: null,
-        history: [], // Local mock history for charts
-        image: null // Wait for gallery fetch to display profile
-      }));
+      const currentPlants = get().plants;
+      
+      const mapped = data.map(plant => {
+        const existing = currentPlants.find(p => p.id === plant.id);
+        return {
+          id: plant.id,
+          environmentId: plant.environment_id,
+          name: plant.name,
+          strainName: plant.strain || '',
+          strainType: plant.type || StrainType.PHOTOPERIODIC,
+          dateGerminated: plant.date_germinated ? plant.date_germinated + "Z" : null,
+          dateFlippedToFlower: plant.date_flipped ? plant.date_flipped + "Z" : null,
+          currentPhase: plant.current_phase || PlantPhase.GERMINATION,
+          hasSoilMoistureSensor: plant.has_soil_moisture_sensor || false,
+          sensorConfig: plant.sensor_config || { soilMoisture: '', soilTemp: '' },
+          trackEC: true, // Default local settings
+          trackPH: true,
+          currentMoistureLevel: existing ? existing.currentMoistureLevel : null,
+          currentSoilTemp: existing ? existing.currentSoilTemp : null,
+          history: existing ? existing.history : [], // Preserve local mock history for charts
+          image: existing ? existing.image : null // Wait for gallery fetch to display profile
+        };
+      });
       set({ plants: mapped, isLoading: false });
       
       // Auto-fetch sensors after loading plants so they appear on initial page load
