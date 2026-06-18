@@ -197,11 +197,26 @@ export default function PlantsView() {
           const latestImg = getLatestPlantImage(plant.id);
           return (
             <div key={plant.id} className="glass-card interactive" onClick={() => handleSelectPlant(plant)} style={{ cursor: 'pointer' }}>
-              <div style={{ width: '100%', height: '120px', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <div style={{ position: 'relative', width: '100%', height: '120px', background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                 {latestImg ? (
                   <img src={latestImg} alt={plant.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <span style={{ fontSize: '3rem' }}>🪴</span>
+                )}
+                
+                {plant.hasSoilMoistureSensor && (plant.currentMoistureLevel !== null || plant.currentSoilTemp !== null) && (
+                  <div style={{ position: 'absolute', bottom: '6px', right: '6px', display: 'flex', gap: '4px', zIndex: 10 }}>
+                    {plant.currentMoistureLevel !== null && (
+                      <span className="text-xs font-semibold" style={{ background: plant.currentMoistureLevel < 30 ? 'rgba(var(--error-rgb), 0.85)' : 'rgba(0,0,0,0.65)', color: plant.currentMoistureLevel < 30 ? '#fff' : 'var(--info)', padding: '3px 6px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '3px', backdropFilter: 'blur(4px)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                        💧 {plant.currentMoistureLevel}%
+                      </span>
+                    )}
+                    {plant.currentSoilTemp !== null && (
+                      <span className="text-xs font-semibold" style={{ background: 'rgba(0,0,0,0.65)', color: 'var(--warning)', padding: '3px 6px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '3px', backdropFilter: 'blur(4px)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                        🌡️ {plant.currentSoilTemp}°C
+                      </span>
+                    )}
+                  </div>
                 )}
               </div>
               <h3 className="text-md mb-1">{plant.name}</h3>
@@ -210,20 +225,6 @@ export default function PlantsView() {
                 <span className="text-xs text-primary font-semibold">{plant.currentPhase}</span>
                 <span className="text-xs">Day {daysSinceGermination}</span>
               </div>
-              {plant.hasSoilMoistureSensor && (plant.currentMoistureLevel !== null || plant.currentSoilTemp !== null) && (
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  {plant.currentMoistureLevel !== null && (
-                    <span className="text-xs font-semibold" style={{ background: plant.currentMoistureLevel < 30 ? 'rgba(var(--error-rgb), 0.2)' : 'rgba(var(--info-rgb), 0.2)', color: plant.currentMoistureLevel < 30 ? 'var(--error)' : 'var(--info)', padding: '2px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      💧 {plant.currentMoistureLevel}%
-                    </span>
-                  )}
-                  {plant.currentSoilTemp !== null && (
-                    <span className="text-xs font-semibold" style={{ background: 'rgba(var(--warning-rgb), 0.2)', color: 'var(--warning)', padding: '2px 6px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      🌡️ {plant.currentSoilTemp}°C
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
           )
         })}
