@@ -1,5 +1,3 @@
-
-<!-- Replace with actual logo -->
 <p align="center">
   <img src="./assets/icon.png?v=2" alt="Calyx Logo" width="128" />
 </p>
