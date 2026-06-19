@@ -17,6 +17,10 @@ Builds:
     sudo:
       - apt-get update
       - apt-get install -y nodejs npm
+    prebuild:
+      - npm install
+    scandelete:
+      - node_modules
     output: android/app/build/outputs/apk/release/app-release-unsigned.apk
     build:
       - npm install
