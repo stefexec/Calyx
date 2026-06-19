@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       
@@ -22,14 +24,14 @@ jobs:
       - name: Build web
         run: npm run build
         
-      - name: Sync Capacitor
-        run: npx cap sync android
-        
-      - name: set up JDK 17
+      - name: set up JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
+          
+      - name: Sync Capacitor
+        run: npx cap sync android
           
       - name: Build with Gradle
         working-directory: ./android
