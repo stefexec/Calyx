@@ -3,9 +3,11 @@ import { Settings, Settings2, Sun, Moon, Database, Power, Wind, Droplets, BellRi
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { sendNotification } from '../utils/notifications';
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 
 export default function EnvironmentsView() {
+  const { t } = useTranslation();
   const { environments, togglePlug, addEnvironment, updatePlugConfig, updateEnvironment, fetchHistory, fetchPlugStates } = useEnvironmentStore();
   const [showModal, setShowModal] = useState(false);
   const [newEnv, setNewEnv] = useState({ name: '', growMedium: GrowMedium.SOIL, lightHoursOn: 18, lightHoursOff: 6 });
@@ -21,7 +23,7 @@ export default function EnvironmentsView() {
   }, [environments.length]);
 
   const handleTestAlarm = async () => {
-    await sendNotification('🚨 LIGHT LEAK ALARM', 'Lux sensor detected light during Dark Phase in Tent #1!', 'high');
+    await sendNotification(t('environments.alarm_title', '🚨 LIGHT LEAK ALARM'), t('environments.alarm_body', 'Lux sensor detected light during Dark Phase in Tent #1!'), 'high');
   };
 
   const handleCreate = (e) => {
@@ -39,7 +41,7 @@ export default function EnvironmentsView() {
   return (
     <div className="page-container">
       <div className="flex-between mb-6">
-        <h1>Environments</h1>
+        <h1>{t('environments.title', 'Environments')}</h1>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button className="btn btn-primary" style={{ padding: '0.5rem' }} onClick={() => setShowModal(true)}>
             <Plus size={20} />
@@ -58,7 +60,7 @@ export default function EnvironmentsView() {
                 <div>
                   <h2 className="text-lg">{env.name}</h2>
                   <p className="text-xs text-muted flex-center" style={{ justifyContent: 'flex-start', gap: '0.25rem' }}>
-                    <Sun size={12} /> {env.lightHoursOn}h ON <Moon size={12} className="ml-2" /> {env.lightHoursOff}h OFF
+                    <Sun size={12} /> {env.lightHoursOn}{t('environments.hours_on', 'h ON')} <Moon size={12} className="ml-2" /> {env.lightHoursOff}{t('environments.hours_off', 'h OFF')}
                   </p>
                 </div>
               </div>
@@ -71,19 +73,19 @@ export default function EnvironmentsView() {
               {(env.plugConfig?.light?.enabled ?? true) && (
                 <button onClick={() => togglePlug(env.id, 'light')} className={`btn ${env.plugConfig?.light?.isOn ? 'btn-plug-active-warning' : 'btn-plug-inactive'}`} style={{ flexDirection: 'column', padding: '1rem 0.5rem', borderRadius: 'var(--radius-md)' }}>
                   <Power size={20} className="mb-2" />
-                  <span className="text-xs">Light</span>
+                  <span className="text-xs">{t('environments.plug_light', 'Light')}</span>
                 </button>
               )}
               {(env.plugConfig?.exhaust?.enabled ?? true) && (
                 <button onClick={() => togglePlug(env.id, 'exhaust')} className={`btn ${env.plugConfig?.exhaust?.isOn ? 'btn-plug-active-info' : 'btn-plug-inactive'}`} style={{ flexDirection: 'column', padding: '1rem 0.5rem', borderRadius: 'var(--radius-md)' }}>
                   <Wind size={20} className="mb-2" />
-                  <span className="text-xs">Exhaust</span>
+                  <span className="text-xs">{t('environments.plug_exhaust', 'Exhaust')}</span>
                 </button>
               )}
               {(env.plugConfig?.humidifier?.enabled ?? true) && (
                 <button onClick={() => togglePlug(env.id, 'humidifier')} className={`btn ${env.plugConfig?.humidifier?.isOn ? 'btn-plug-active-primary' : 'btn-plug-inactive'}`} style={{ flexDirection: 'column', padding: '1rem 0.5rem', borderRadius: 'var(--radius-md)' }}>
                   <Droplets size={20} className="mb-2" />
-                  <span className="text-xs">Humidifier</span>
+                  <span className="text-xs">{t('environments.plug_humidifier', 'Humidifier')}</span>
                 </button>
               )}
             </div>
@@ -91,9 +93,9 @@ export default function EnvironmentsView() {
             {env.history && env.history.length > 0 && (
               <div className="mt-6">
                 <div className="flex-between mb-2">
-                  <h4 className="text-sm font-semibold">24h Climate History</h4>
+                  <h4 className="text-sm font-semibold">{t('environments.climate_history', '24h Climate History')}</h4>
                   <button onClick={handleTestAlarm} className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.65rem' }}>
-                    <BellRing size={12} /> Test Leak Alarm
+                    <BellRing size={12} /> {t('environments.test_leak_alarm', 'Test Leak Alarm')}
                   </button>
                 </div>
                 <div style={{ height: '150px', width: '100%' }}>
@@ -114,7 +116,7 @@ export default function EnvironmentsView() {
 
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
               <div className="text-xs text-muted mb-2 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                <Database size={14} /> Connected HA Entities
+                <Database size={14} /> {t('environments.connected_ha_entities', 'Connected HA Entities')}
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {(env.homeAssistantSensors || env.homeAssistantEntityIds || []).filter(id => id && id.trim() !== '').map(id => (
@@ -132,18 +134,18 @@ export default function EnvironmentsView() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="flex-between mb-6">
-              <h2>New Tent</h2>
+              <h2>{t('environments.new_tent', 'New Tent')}</h2>
               <button className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label className="text-sm text-muted mb-2 block">Tent Name</label>
-                <input type="text" className="input-premium" value={newEnv.name} onChange={e => setNewEnv({...newEnv, name: e.target.value})} placeholder="e.g. Flower Tent 2" required />
+                <label className="text-sm text-muted mb-2 block">{t('environments.tent_name', 'Tent Name')}</label>
+                <input type="text" className="input-premium" value={newEnv.name} onChange={e => setNewEnv({...newEnv, name: e.target.value})} placeholder={t('environments.tent_name_placeholder', 'e.g. Flower Tent 2')} required />
               </div>
               <div>
-                <label className="text-sm text-muted mb-2 block">Grow Medium</label>
+                <label className="text-sm text-muted mb-2 block">{t('environments.grow_medium', 'Grow Medium')}</label>
                 <select className="input-premium" value={newEnv.growMedium} onChange={e => setNewEnv({...newEnv, growMedium: e.target.value})}>
                   {Object.values(GrowMedium).map(m => (
                     <option key={m} value={m}>{m}</option>
@@ -152,15 +154,15 @@ export default function EnvironmentsView() {
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
-                  <label className="text-sm text-muted mb-2 block">Light Hours ON</label>
+                  <label className="text-sm text-muted mb-2 block">{t('environments.light_hours_on', 'Light Hours ON')}</label>
                   <input type="number" className="input-premium" value={newEnv.lightHoursOn} onChange={e => setNewEnv({...newEnv, lightHoursOn: parseInt(e.target.value)})} min="0" max="24" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label className="text-sm text-muted mb-2 block">Light Hours OFF</label>
+                  <label className="text-sm text-muted mb-2 block">{t('environments.light_hours_off', 'Light Hours OFF')}</label>
                   <input type="number" className="input-premium" value={newEnv.lightHoursOff} onChange={e => setNewEnv({...newEnv, lightHoursOff: parseInt(e.target.value)})} min="0" max="24" />
                 </div>
               </div>
-              <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Create Tent</button>
+              <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>{t('environments.create_tent', 'Create Tent')}</button>
             </form>
           </div>
         </div>,
@@ -171,7 +173,7 @@ export default function EnvironmentsView() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="flex-between mb-6">
-              <h2>{selectedEnvForSettings.name} Settings</h2>
+              <h2>{t('environments.settings_title', '{{name}} Settings', { name: selectedEnvForSettings.name })}</h2>
               <button className="btn btn-secondary" onClick={() => setSelectedEnvForSettings(null)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
                 <X size={20} />
               </button>
@@ -180,9 +182,9 @@ export default function EnvironmentsView() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
               <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                <h3 className="text-md text-primary mb-3">General Settings</h3>
+                <h3 className="text-md text-primary mb-3">{t('environments.general_settings', 'General Settings')}</h3>
                 <div className="mb-3">
-                  <label className="text-xs text-muted mb-1 block">Tent Name</label>
+                  <label className="text-xs text-muted mb-1 block">{t('environments.tent_name', 'Tent Name')}</label>
                   <input type="text" className="input-premium" value={selectedEnvForSettings.name} onChange={(e) => {
                     const name = e.target.value;
                     setSelectedEnvForSettings(s => ({...s, name}));
@@ -190,7 +192,7 @@ export default function EnvironmentsView() {
                   }} />
                 </div>
                 <div>
-                  <label className="text-xs text-muted mb-1 block">Grow Medium</label>
+                  <label className="text-xs text-muted mb-1 block">{t('environments.grow_medium', 'Grow Medium')}</label>
                   <select className="input-premium" value={selectedEnvForSettings.growMedium} onChange={(e) => {
                     const growMedium = e.target.value;
                     setSelectedEnvForSettings(s => ({...s, growMedium}));
@@ -202,11 +204,11 @@ export default function EnvironmentsView() {
               </div>
 
               <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                <h3 className="text-md text-primary mb-3">Light Cycle</h3>
+                <h3 className="text-md text-primary mb-3">{t('environments.light_cycle', 'Light Cycle')}</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ flex: 1 }}>
                     <label className="text-xs text-muted mb-1 flex-center" style={{ justifyContent: 'flex-start', gap: '0.25rem' }}>
-                      <Sun size={12} className="text-warning"/> Hours ON ({selectedEnvForSettings.lightHoursOn}h)
+                      <Sun size={12} className="text-warning"/> {t('environments.hours_on_label', 'Hours ON ({{hours}}h)', { hours: selectedEnvForSettings.lightHoursOn })}
                     </label>
                     <input type="range" min="0" max="24" value={selectedEnvForSettings.lightHoursOn} onChange={(e) => {
                       const lightHoursOn = parseInt(e.target.value);
@@ -217,7 +219,7 @@ export default function EnvironmentsView() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <label className="text-xs text-muted mb-1 flex-center" style={{ justifyContent: 'flex-start', gap: '0.25rem' }}>
-                      <Moon size={12} className="text-secondary"/> Hours OFF ({selectedEnvForSettings.lightHoursOff}h)
+                      <Moon size={12} className="text-secondary"/> {t('environments.hours_off_label', 'Hours OFF ({{hours}}h)', { hours: selectedEnvForSettings.lightHoursOff })}
                     </label>
                     <input type="range" min="0" max="24" value={selectedEnvForSettings.lightHoursOff} onChange={(e) => {
                       const lightHoursOff = parseInt(e.target.value);
@@ -230,38 +232,38 @@ export default function EnvironmentsView() {
               </div>
 
               <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-                <h3 className="text-md text-primary mb-3">Sensor Mapping</h3>
+                <h3 className="text-md text-primary mb-3">{t('environments.sensor_mapping', 'Sensor Mapping')}</h3>
                 <div className="mb-3">
-                  <label className="text-xs text-muted mb-1 block">Temperature Sensor Entity ID</label>
+                  <label className="text-xs text-muted mb-1 block">{t('environments.temp_sensor', 'Temperature Sensor Entity ID')}</label>
                   <input type="text" className="input-premium" value={selectedEnvForSettings.tempSensor || ''} onChange={(e) => {
                     const tempSensor = e.target.value;
                     setSelectedEnvForSettings(s => ({...s, tempSensor}));
                     const updatedHaSensors = [tempSensor, selectedEnvForSettings.rhSensor || '', selectedEnvForSettings.luxSensor || ''];
                     updateEnvironment(selectedEnvForSettings.id, { homeAssistantSensors: updatedHaSensors });
-                  }} placeholder="e.g. sensor.tent_temperature" />
+                  }} placeholder={t('environments.temp_sensor_ph', 'e.g. sensor.tent_temperature')} />
                 </div>
                 <div>
-                  <label className="text-xs text-muted mb-1 block">Humidity Sensor Entity ID</label>
+                  <label className="text-xs text-muted mb-1 block">{t('environments.rh_sensor', 'Humidity Sensor Entity ID')}</label>
                   <input type="text" className="input-premium" value={selectedEnvForSettings.rhSensor || ''} onChange={(e) => {
                     const rhSensor = e.target.value;
                     setSelectedEnvForSettings(s => ({...s, rhSensor}));
                     const updatedHaSensors = [selectedEnvForSettings.tempSensor || '', rhSensor, selectedEnvForSettings.luxSensor || ''];
                     updateEnvironment(selectedEnvForSettings.id, { homeAssistantSensors: updatedHaSensors });
-                  }} placeholder="e.g. sensor.tent_humidity" />
+                  }} placeholder={t('environments.rh_sensor_ph', 'e.g. sensor.tent_humidity')} />
                 </div>
                 <div className="mt-3">
-                  <label className="text-xs text-muted mb-1 block">Lux Sensor Entity ID (for Light Bleed Alerts)</label>
+                  <label className="text-xs text-muted mb-1 block">{t('environments.lux_sensor', 'Lux Sensor Entity ID (for Light Bleed Alerts)')}</label>
                   <input type="text" className="input-premium" value={selectedEnvForSettings.luxSensor || ''} onChange={(e) => {
                     const luxSensor = e.target.value;
                     setSelectedEnvForSettings(s => ({...s, luxSensor}));
                     const updatedHaSensors = [selectedEnvForSettings.tempSensor || '', selectedEnvForSettings.rhSensor || '', luxSensor];
                     updateEnvironment(selectedEnvForSettings.id, { homeAssistantSensors: updatedHaSensors });
-                  }} placeholder="e.g. sensor.tent_lux" />
+                  }} placeholder={t('environments.lux_sensor_ph', 'e.g. sensor.tent_lux')} />
                 </div>
               </div>
 
               <div>
-                <h3 className="text-md text-primary mb-3">Smart Plugs Mapping</h3>
+                <h3 className="text-md text-primary mb-3">{t('environments.smart_plugs_mapping', 'Smart Plugs Mapping')}</h3>
               
               {['light', 'exhaust', 'humidifier'].map(plugKey => {
                 const plugConfig = selectedEnvForSettings.plugConfig || {};
@@ -269,9 +271,9 @@ export default function EnvironmentsView() {
                 return (
                   <div key={plugKey} className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
                     <div className="flex-between mb-3">
-                      <span className="font-semibold capitalize">{plugKey}</span>
+                      <span className="font-semibold capitalize">{t(`environments.plug_${plugKey}`, plugKey)}</span>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <span className="text-xs text-muted">Enabled</span>
+                        <span className="text-xs text-muted">{t('environments.enabled', 'Enabled')}</span>
                         <input 
                           type="checkbox" 
                           checked={config.enabled}
@@ -286,7 +288,7 @@ export default function EnvironmentsView() {
                     </div>
                     {config.enabled && (
                       <div>
-                        <label className="text-xs text-muted mb-1 block">HA Entity ID</label>
+                        <label className="text-xs text-muted mb-1 block">{t('environments.ha_entity_id', 'HA Entity ID')}</label>
                         <input 
                           type="text" 
                           className="input-premium" 
@@ -298,7 +300,7 @@ export default function EnvironmentsView() {
                               ...state, plugConfig: { ...(state.plugConfig || {}), [plugKey]: { ...config, entityId: e.target.value } }
                             }));
                           }}
-                          placeholder={`e.g. switch.tent_${plugKey}`} 
+                          placeholder={t('environments.plug_ph', 'e.g. switch.tent_{{plugKey}}', { plugKey })} 
                         />
                       </div>
                     )}
@@ -307,7 +309,7 @@ export default function EnvironmentsView() {
               })}
               </div>
 
-              <button className="btn btn-primary mt-4" onClick={() => setSelectedEnvForSettings(null)}>Save & Close</button>
+              <button className="btn btn-primary mt-4" onClick={() => setSelectedEnvForSettings(null)}>{t('environments.save_close', 'Save & Close')}</button>
             </div>
           </div>
         </div>,

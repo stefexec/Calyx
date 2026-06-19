@@ -4,9 +4,11 @@ import usePlantStore from '../store/usePlantStore';
 import useTaskStore, { TaskCategory } from '../store/useTaskStore';
 import { format, addDays, isSameDay, startOfDay } from 'date-fns';
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 
 export default function DashboardView() {
+  const { t } = useTranslation();
   const { environments, fetchHistory } = useEnvironmentStore();
   const { plants, fetchPlantSensorStates } = usePlantStore();
   const { tasks, addTask, toggleTaskCompletion } = useTaskStore();
@@ -80,8 +82,8 @@ export default function DashboardView() {
     <div className="page-container">
       <div className="flex-between mb-4">
         <div>
-          <h1 className="text-gradient">Calyx</h1>
-          <p className="text-muted text-sm">Your Garden Overview</p>
+          <h1 className="text-gradient">{t('dashboard.title', 'Calyx')}</h1>
+          <p className="text-muted text-sm">{t('dashboard.subtitle', 'Your Garden Overview')}</p>
         </div>
         <div 
           className="glass flex-center" 
@@ -134,7 +136,7 @@ export default function DashboardView() {
         })}
       </div>
 
-      <h2 className="text-lg mb-4">Environment Metrics</h2>
+      <h2 className="text-lg mb-4">{t('dashboard.metrics', 'Environment Metrics')}</h2>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
         {environments.map(env => {
           const ha = getHAData(env);
@@ -161,9 +163,9 @@ export default function DashboardView() {
       </div>
 
       <div className="flex-between mb-4">
-        <h2 className="text-lg">Agenda for {format(selectedDate, 'MMM d')}</h2>
+        <h2 className="text-lg">{t('dashboard.agenda', 'Agenda for {{date}}', { date: format(selectedDate, 'MMM d') })}</h2>
         <button onClick={() => setShowEventModal(true)} className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '0.75rem' }}>
-          <Calendar size={14} /> Plan Event
+          <Calendar size={14} /> {t('dashboard.plan_event', 'Plan Event')}
         </button>
       </div>
 
@@ -174,7 +176,7 @@ export default function DashboardView() {
             <div key={task.id} className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', opacity: task.isCompleted ? 0.5 : 1 }}>
               <div>
                 <div className="font-semibold mb-1 flex-center" style={{ justifyContent: 'flex-start', gap: '0.5rem' }}>
-                  {plant ? plant.name : 'General Task'}
+                  {plant ? plant.name : t('dashboard.general_task', 'General Task')}
                   <span className="text-xs text-accent" style={{ background: 'rgba(244, 114, 182, 0.1)', padding: '2px 6px', borderRadius: '8px' }}>
                     {task.category}
                   </span>
@@ -188,7 +190,7 @@ export default function DashboardView() {
           );
         })}
         {tasks.filter(t => isSameDay(new Date(t.date), selectedDate)).length === 0 && (
-          <div className="text-muted text-sm text-center py-4">No events scheduled for this day.</div>
+          <div className="text-muted text-sm text-center py-4">{t('dashboard.no_events', 'No events scheduled for this day.')}</div>
         )}
       </div>
 
@@ -196,7 +198,7 @@ export default function DashboardView() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="flex-between mb-6">
-              <h2>Plan Event</h2>
+              <h2>{t('dashboard.plan_event', 'Plan Event')}</h2>
               <button className="btn btn-secondary" onClick={() => setShowEventModal(false)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
                 <X size={20} />
               </button>
@@ -209,26 +211,26 @@ export default function DashboardView() {
             }} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               
               <div>
-                <label className="text-sm text-muted mb-2 block">Target Plant</label>
+                <label className="text-sm text-muted mb-2 block">{t('dashboard.target_plant', 'Target Plant')}</label>
                 <select className="input-premium" value={newEvent.plantId} onChange={e => setNewEvent({...newEvent, plantId: e.target.value})} required>
-                  <option value="" disabled>Select a Plant...</option>
+                  <option value="" disabled>{t('dashboard.select_plant', 'Select a Plant...')}</option>
                   {plants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="text-sm text-muted mb-2 block">Event Category</label>
+                <label className="text-sm text-muted mb-2 block">{t('dashboard.event_category', 'Event Category')}</label>
                 <select className="input-premium" value={newEvent.category} onChange={e => setNewEvent({...newEvent, category: e.target.value})}>
                   {Object.values(TaskCategory).map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="text-sm text-muted mb-2 block">Description (Optional)</label>
-                <input type="text" className="input-premium" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} placeholder="e.g. LST Tie down" />
+                <label className="text-sm text-muted mb-2 block">{t('dashboard.description_optional', 'Description (Optional)')}</label>
+                <input type="text" className="input-premium" value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} placeholder={t('dashboard.description_placeholder', 'e.g. LST Tie down')} />
               </div>
 
-              <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>Schedule Event</button>
+              <button type="submit" className="btn btn-primary mt-4" style={{ width: '100%' }}>{t('dashboard.schedule_event', 'Schedule Event')}</button>
             </form>
           </div>
         </div>,
@@ -239,7 +241,7 @@ export default function DashboardView() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div className="glass-card" style={{ width: '100%', maxWidth: '500px', borderRadius: '24px', padding: '2rem 1.5rem', maxHeight: '90vh', overflowY: 'auto' }}>
             <div className="flex-between mb-6">
-              <h2>About</h2>
+              <h2>{t('dashboard.about', 'About')}</h2>
               <button className="btn btn-secondary" onClick={() => setShowCreditsModal(false)} style={{ padding: '0.5rem', borderRadius: '50%' }}>
                 <X size={20} />
               </button>
@@ -248,11 +250,11 @@ export default function DashboardView() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', textAlign: 'center' }}>
               <div>
                 <h3 className="text-gradient mb-2" style={{ fontSize: '1.5rem' }}>Calyx</h3>
-                <p className="text-muted">© 2026 Calyx v1.1.1 • by Gurkenwerfer</p>
+                <p className="text-muted">{t('dashboard.copyright', '© 2026 Calyx v1.2.0 • by Gurkenwerfer')}</p>
               </div>
 
               <div style={{ background: 'var(--bg-glass)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--border)' }}>
-                <h4 className="mb-4 text-sm text-muted" style={{ textTransform: 'uppercase', letterSpacing: '1px' }}>Support the Developer</h4>
+                <h4 className="mb-4 text-sm text-muted" style={{ textTransform: 'uppercase', letterSpacing: '1px' }}>{t('dashboard.support_dev', 'Support the Developer')}</h4>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {[
@@ -298,7 +300,7 @@ export default function DashboardView() {
                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                   >
                     <Coffee size={24} style={{ flexShrink: 0 }} />
-                    <span className="font-semibold">Alternatively, you can Buy Me a Coffee. Thank you! 💖</span>
+                    <span className="font-semibold">{t('dashboard.buy_coffee', 'Alternatively, you can Buy Me a Coffee. Thank you! 💖')}</span>
                   </a>
                 </div>
               </div>

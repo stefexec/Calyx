@@ -1,7 +1,7 @@
 {
   "name": "calyx",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -15,9 +15,12 @@
     "@capacitor/core": "^8.4.0",
     "@capacitor/local-notifications": "^8.2.0",
     "date-fns": "^4.4.0",
+    "i18next": "^26.3.1",
+    "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^1.20.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-i18next": "^17.0.8",
     "react-router-dom": "^7.18.0",
     "recharts": "^3.8.1",
     "zustand": "^5.0.14"

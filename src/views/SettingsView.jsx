@@ -6,8 +6,10 @@ import useNutrientStore from '../store/useNutrientStore';
 import useConnectionStore from '../store/useConnectionStore';
 import { sendNotification } from '../utils/notifications';
 import { fetchApi } from '../utils/api';
+import { useTranslation } from 'react-i18next';
 
 export default function SettingsView() {
+  const { t, i18n } = useTranslation();
   const { ntfyUrl, ntfyTopic, ntfyToken, haUrl, haToken, defaultVegDays, luxThreshold, updateNtfySettings, updateHaSettings, updateDefaultVegDays, updateLuxThreshold } = useSettingsStore();
   const { products, recipes, addProduct, deleteProduct, addRecipe, deleteRecipe } = useNutrientStore();
   const { serverUrl, apiKey, setConnectionDetails } = useConnectionStore();
@@ -37,7 +39,7 @@ export default function SettingsView() {
 
   const handleSaveConnection = () => {
     setConnectionDetails(localServerUrl, localApiKey);
-    alert('Connection settings saved! Reload the page to apply them properly if needed.');
+    alert(t('settings.conn_saved', 'Connection settings saved! Reload the page to apply them properly if needed.'));
   };
 
   const fallbackCopyTextToClipboard = (text) => {
@@ -83,7 +85,7 @@ export default function SettingsView() {
       setCopiedKey(false);
       copyText(data.key);
     } catch (e) {
-      alert("Failed to create API key");
+      alert(t('settings.api_key_failed', "Failed to create API key"));
     }
   };
 
@@ -94,12 +96,12 @@ export default function SettingsView() {
   };
 
   const handleDeleteApiKey = async (id) => {
-    if (!confirm("Are you sure you want to delete this API key? Devices using it will be disconnected.")) return;
+    if (!confirm(t('settings.delete_key_confirm', "Are you sure you want to delete this API key? Devices using it will be disconnected."))) return;
     try {
       await fetchApi(`/apikeys/${id}`, { method: 'DELETE' });
       setApiKeysList(apiKeysList.filter(k => k.id !== id));
     } catch (e) {
-      alert(`Failed to delete API key: ${e.message}`);
+      alert(t('settings.delete_key_error', "Failed to delete API key: {{msg}}", { msg: e.message }));
     }
   };
 
@@ -153,23 +155,25 @@ export default function SettingsView() {
   };
 
   const handleTestNotification = async () => {
-    await sendNotification("Test Alert! 🚀", "This is a test message from Calyx settings.", "high");
+    await sendNotification(t('settings.test_alert_title', "Test Alert! 🚀"), t('settings.test_alert_body', "This is a test message from Calyx settings."), "high");
   };
 
   const handleTestHaConnection = async () => {
     try {
       await fetchApi('/ha/test');
-      alert("Home Assistant Connection Successful!");
+      alert(t('settings.ha_success', "Home Assistant Connection Successful!"));
     } catch (e) {
-      alert(`Error connecting to Home Assistant: ${e.message}`);
+      alert(t('settings.ha_error', "Error connecting to Home Assistant: {{msg}}", { msg: e.message }));
     }
   };
 
   return (
     <div className="page-container">
-      <h1 className="mb-6">Settings & Integrations</h1>
+      <h1 className="mb-6">{t('settings.title', 'Settings & Integrations')}</h1>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+
         <div className="glass-card">
           <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
             <Server className="text-primary" size={24} />
@@ -190,19 +194,19 @@ export default function SettingsView() {
         <div className="glass-card">
           <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
             <Key className="text-warning" size={24} />
-            <h2 className="text-lg">API Keys Management</h2>
+            <h2 className="text-lg">{t('settings.api_keys_mgmt', 'API Keys Management')}</h2>
           </div>
-          <p className="text-sm text-muted mb-4">Manage access tokens for your devices. You must be connected with a valid API key to view or create new keys.</p>
+          <p className="text-sm text-muted mb-4">{t('settings.api_keys_desc', 'Manage access tokens for your devices. You must be connected with a valid API key to view or create new keys.')}</p>
           
           <form onSubmit={handleCreateApiKey} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-            <input type="text" className="input-premium" style={{ flex: 1 }} placeholder="New device name (e.g. iPhone)" value={newKeyName} onChange={e => setNewKeyName(e.target.value)} required />
+            <input type="text" className="input-premium" style={{ flex: 1 }} placeholder={t('settings.new_device_name', "New device name (e.g. iPhone)")} value={newKeyName} onChange={e => setNewKeyName(e.target.value)} required />
             <button type="submit" className="btn btn-secondary"><Plus size={18} /></button>
           </form>
 
           {newlyGeneratedKey && (
             <div className="mb-4" style={{ background: 'rgba(var(--success-rgb), 0.1)', border: '1px solid var(--success)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
-              <div className="text-sm font-semibold text-success mb-2">New API Key Generated!</div>
-              <p className="text-xs text-muted mb-3">Please save this key securely right now. It will not be shown again once you close this page.</p>
+              <div className="text-sm font-semibold text-success mb-2">{t('settings.new_key_gen', 'New API Key Generated!')}</div>
+              <p className="text-xs text-muted mb-3">{t('settings.new_key_save', 'Please save this key securely right now. It will not be shown again once you close this page.')}</p>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <input type="text" className="input-premium" value={newlyGeneratedKey} readOnly style={{ flex: 1, color: 'var(--success)', fontFamily: 'monospace' }} />
                 <button className={`btn ${copiedKey ? 'btn-success' : 'btn-secondary'}`} onClick={copyToClipboard} style={{ padding: '0 1rem' }}>
@@ -218,72 +222,72 @@ export default function SettingsView() {
                 <li key={k.id} className="flex-between p-3 text-sm" style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-sm)' }}>
                   <div>
                     <div className="font-semibold">{k.name}</div>
-                    <div className="text-xs text-muted">Created: {new Date(k.created_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-muted">{t('settings.created', 'Created:')} {new Date(k.created_at).toLocaleDateString()}</div>
                   </div>
                   <button className="text-error hover-opacity" onClick={() => handleDeleteApiKey(k.id)}><Trash2 size={16} /></button>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted text-center p-4">No API keys loaded. Check your connection.</p>
+            <p className="text-sm text-muted text-center p-4">{t('settings.no_keys', 'No API keys loaded. Check your connection.')}</p>
           )}
         </div>
 
         <div className="glass-card">
           <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
             <Link className="text-primary" size={24} />
-            <h2 className="text-lg">Home Assistant</h2>
+            <h2 className="text-lg">{t('settings.ha_title', 'Home Assistant')}</h2>
           </div>
-          <p className="text-sm text-muted mb-4">Connect to your local Home Assistant instance to pull real-time environment data and control smart plugs.</p>
+          <p className="text-sm text-muted mb-4">{t('settings.ha_desc', 'Connect to your local Home Assistant instance to pull real-time environment data and control smart plugs.')}</p>
           <div className="mb-4">
-            <label className="text-xs text-muted mb-1 block">HA URL</label>
+            <label className="text-xs text-muted mb-1 block">{t('settings.ha_url', 'HA URL')}</label>
             <input type="text" className="input-premium" placeholder="http://homeassistant.local:8123" value={haUrl} onChange={(e) => updateHaSettings(e.target.value, haToken)} />
           </div>
           <div className="mb-4">
-            <label className="text-xs text-muted mb-1 block">Long-Lived Access Token</label>
+            <label className="text-xs text-muted mb-1 block">{t('settings.ha_token', 'Long-Lived Access Token')}</label>
             <input type="password" className="input-premium" placeholder="ey..." value={haToken} onChange={(e) => updateHaSettings(haUrl, e.target.value)} />
           </div>
-          <button className="btn btn-secondary w-full" onClick={handleTestHaConnection}>Test Connection</button>
+          <button className="btn btn-secondary w-full" onClick={handleTestHaConnection}>{t('settings.test_conn', 'Test Connection')}</button>
         </div>
 
         <div className="glass-card">
           <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
             <Bell className="text-info" size={24} />
-            <h2 className="text-lg">Push Notifications (ntfy)</h2>
+            <h2 className="text-lg">{t('settings.ntfy_title', 'Push Notifications (ntfy)')}</h2>
           </div>
-          <p className="text-sm text-muted mb-4">Configure self-hosted ntfy.sh alerts for warnings and updates.</p>
+          <p className="text-sm text-muted mb-4">{t('settings.ntfy_desc', 'Configure self-hosted ntfy.sh alerts for warnings and updates.')}</p>
           <div className="mb-4">
-            <label className="text-xs text-muted mb-1 block">Server URL</label>
+            <label className="text-xs text-muted mb-1 block">{t('settings.server_url', 'Server URL')}</label>
             <input type="text" className="input-premium" value={ntfyUrl} onChange={(e) => updateNtfySettings(e.target.value, ntfyTopic, ntfyToken)} placeholder="https://ntfy.sh" />
           </div>
           <div className="mb-4">
-            <label className="text-xs text-muted mb-1 block">Topic / Channel Name</label>
+            <label className="text-xs text-muted mb-1 block">{t('settings.topic', 'Topic / Channel Name')}</label>
             <input type="text" className="input-premium" value={ntfyTopic} onChange={(e) => updateNtfySettings(ntfyUrl, e.target.value, ntfyToken)} placeholder="calyx_alerts" />
           </div>
           <div className="mb-4">
-            <label className="text-xs text-muted mb-1 block">Access Token (Optional)</label>
+            <label className="text-xs text-muted mb-1 block">{t('settings.access_token_opt', 'Access Token (Optional)')}</label>
             <input type="password" className="input-premium" value={ntfyToken} onChange={(e) => updateNtfySettings(ntfyUrl, ntfyTopic, e.target.value)} placeholder="tk_..." />
           </div>
-          <button className="btn btn-secondary w-full" onClick={handleTestNotification}>Test Notification</button>
+          <button className="btn btn-secondary w-full" onClick={handleTestNotification}>{t('settings.test_notif', 'Test Notification')}</button>
         </div>
 
         <div className="glass-card">
           <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
             <Database className="text-secondary" size={24} />
-            <h2 className="text-lg">Strain Database</h2>
+            <h2 className="text-lg">{t('settings.db_title', 'Strain Database')}</h2>
           </div>
-          <p className="text-sm text-muted mb-4">Uses the built-in offline Strain Database to auto-fill genetics and flowering times. No rate limits.</p>
-          <button className="btn btn-secondary w-full" disabled>Database Synced</button>
+          <p className="text-sm text-muted mb-4">{t('settings.db_desc', 'Uses the built-in offline Strain Database to auto-fill genetics and flowering times. No rate limits.')}</p>
+          <button className="btn btn-secondary w-full" disabled>{t('settings.db_synced', 'Database Synced')}</button>
         </div>
 
         <div className="glass-card">
           <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
             <Sprout className="text-success" size={24} />
-            <h2 className="text-lg">Cultivation Settings</h2>
+            <h2 className="text-lg">{t('settings.cultivation_title', 'Cultivation Settings')}</h2>
           </div>
-          <p className="text-sm text-muted mb-4">Configure defaults for plant lifecycle calculations and scheduling.</p>
+          <p className="text-sm text-muted mb-4">{t('settings.cultivation_desc', 'Configure defaults for plant lifecycle calculations and scheduling.')}</p>
           <div className="mb-4">
-            <label className="text-xs text-muted mb-1 block">Standard Veg Duration (Days)</label>
+            <label className="text-xs text-muted mb-1 block">{t('settings.std_veg_days', 'Standard Veg Duration (Days)')}</label>
             <input 
               type="number" 
               className="input-premium" 
@@ -292,27 +296,45 @@ export default function SettingsView() {
             />
           </div>
           <div className="mb-4">
-            <label className="text-xs text-muted mb-1 block">Lux Sensor Light Bleed Threshold</label>
+            <label className="text-xs text-muted mb-1 block">{t('settings.lux_threshold', 'Lux Sensor Light Bleed Threshold')}</label>
             <input 
               type="number" 
               className="input-premium" 
               value={luxThreshold} 
               onChange={(e) => updateLuxThreshold(parseInt(e.target.value) || 0)} 
             />
-            <p className="text-xs text-muted mt-1">If your tent's lux sensor exceeds this value while the light plug is OFF, you will receive a high-priority push notification.</p>
+            <p className="text-xs text-muted mt-1">{t('settings.lux_desc', "If your tent's lux sensor exceeds this value while the light plug is OFF, you will receive a high-priority push notification.")}</p>
           </div>
         </div>
 
         <div className="glass-card">
           <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
             <Wrench className="text-warning" size={24} />
-            <h2 className="text-lg">Nutrient Configurator</h2>
+            <h2 className="text-lg">{t('settings.nutrients_title', 'Nutrient Configurator')}</h2>
           </div>
-          <p className="text-sm text-muted mb-4">Manage your fertilizer brands, products, and custom feeding recipes.</p>
+          <p className="text-sm text-muted mb-4">{t('settings.nutrients_desc', 'Manage your fertilizer brands, products, and custom feeding recipes.')}</p>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button className="btn btn-secondary w-full" onClick={() => { setShowNutrientModal(true); setNutrientTab('products'); }}>Manage Nutrients</button>
-            <button className="btn btn-primary w-full" onClick={() => { setShowNutrientModal(true); setNutrientTab('calculator'); }}>Calculator</button>
+            <button className="btn btn-secondary w-full" onClick={() => { setShowNutrientModal(true); setNutrientTab('products'); }}>{t('settings.manage_nutrients', 'Manage Nutrients')}</button>
+            <button className="btn btn-primary w-full" onClick={() => { setShowNutrientModal(true); setNutrientTab('calculator'); }}>{t('settings.calculator', 'Calculator')}</button>
           </div>
+        </div>
+
+        <div className="glass-card">
+          <div className="flex-center mb-4" style={{ justifyContent: 'flex-start', gap: '0.75rem' }}>
+            <h2 className="text-lg">{t('settings.language', 'Language')}</h2>
+          </div>
+          <p className="text-sm text-muted mb-4">{t('settings.language_desc', 'Select your preferred language.')}</p>
+          <select 
+            className="input-premium w-full" 
+            value={i18n.language} 
+            onChange={(e) => i18n.changeLanguage(e.target.value)}
+          >
+            <option value="en">🇬🇧 English</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="zh">🇨🇳 中文</option>
+          </select>
         </div>
       </div>
 
@@ -322,43 +344,43 @@ export default function SettingsView() {
             <div className="flex-between mb-4">
               <div className="flex-center" style={{ gap: '0.75rem' }}>
                 <Wrench className="text-warning" size={24} />
-                <h2>Nutrient Configurator</h2>
+                <h2>{t('settings.nutrients_title', 'Nutrient Configurator')}</h2>
               </div>
               <button className="btn btn-secondary" onClick={() => setShowNutrientModal(false)} style={{ padding: '0.5rem', borderRadius: '50%' }}><X size={20} /></button>
             </div>
             
             <div className="flex-center mb-6" style={{ background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '12px', gap: '4px' }}>
               <button className={`btn ${nutrientTab === 'products' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setNutrientTab('products')}>
-                Products
+                {t('settings.products', 'Products')}
               </button>
               <button className={`btn ${nutrientTab === 'recipes' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setNutrientTab('recipes')}>
-                Presets
+                {t('settings.presets', 'Presets')}
               </button>
               <button className={`btn ${nutrientTab === 'calculator' ? 'btn-primary' : 'btn-secondary'}`} style={{ flex: 1, padding: '8px' }} onClick={() => setNutrientTab('calculator')}>
-                Calculator
+                {t('settings.calculator', 'Calculator')}
               </button>
             </div>
 
             {nutrientTab === 'products' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <form onSubmit={handleAddProduct} className="glass p-4" style={{ borderRadius: 'var(--radius-md)' }}>
-                  <h3 className="text-md mb-3">Add New Product</h3>
+                  <h3 className="text-md mb-3">{t('settings.add_new_product', 'Add New Product')}</h3>
                   <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                     <div style={{ flex: 1 }}>
-                      <label className="text-xs text-muted mb-1 block">Brand</label>
+                      <label className="text-xs text-muted mb-1 block">{t('settings.brand', 'Brand')}</label>
                       <input type="text" className="input-premium" placeholder="e.g. BioBizz" value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} required />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <label className="text-xs text-muted mb-1 block">Product Name</label>
+                      <label className="text-xs text-muted mb-1 block">{t('settings.product_name', 'Product Name')}</label>
                       <input type="text" className="input-premium" placeholder="e.g. Grow" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} required />
                     </div>
                   </div>
-                  <button type="submit" className="btn btn-primary w-full flex-center"><Plus size={18} className="mr-2"/> Add Product</button>
+                  <button type="submit" className="btn btn-primary w-full flex-center"><Plus size={18} className="mr-2"/> {t('settings.add_product', 'Add Product')}</button>
                 </form>
 
                 <div className="glass p-4" style={{ borderRadius: 'var(--radius-md)' }}>
-                  <h3 className="text-md mb-3">Existing Products</h3>
-                  {products.length === 0 ? <p className="text-sm text-muted">No products found.</p> : (
+                  <h3 className="text-md mb-3">{t('settings.existing_products', 'Existing Products')}</h3>
+                  {products.length === 0 ? <p className="text-sm text-muted">{t('settings.no_products', 'No products found.')}</p> : (
                     <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {products.map(p => (
                         <li key={p.id} className="flex-between p-3" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
@@ -375,17 +397,17 @@ export default function SettingsView() {
             {nutrientTab === 'recipes' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <form onSubmit={handleSaveRecipe} className="glass p-4" style={{ borderRadius: 'var(--radius-md)' }}>
-                  <h3 className="text-md mb-3">Create Preset</h3>
+                  <h3 className="text-md mb-3">{t('settings.create_preset', 'Create Preset')}</h3>
                   <div className="mb-3">
-                    <label className="text-xs text-muted mb-1 block">Preset Name</label>
+                    <label className="text-xs text-muted mb-1 block">{t('settings.preset_name', 'Preset Name')}</label>
                     <input type="text" className="input-premium" placeholder="e.g. Week 2 Veg" value={newRecipe.name} onChange={e => setNewRecipe({...newRecipe, name: e.target.value})} required />
                   </div>
                   
                   <div className="mb-3">
-                    <label className="text-xs text-muted mb-1 block">Ingredients (Baseline per 1 Liter)</label>
+                    <label className="text-xs text-muted mb-1 block">{t('settings.ingredients_baseline', 'Ingredients (Baseline per 1 Liter)')}</label>
                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
                       <select className="input-premium" style={{ flex: 2 }} value={selectedIngredient} onChange={e => setSelectedIngredient(e.target.value)}>
-                        <option value="">Select Product...</option>
+                        <option value="">{t('settings.select_product', 'Select Product...')}</option>
                         {products.map(p => <option key={p.id} value={p.id}>{p.brand} {p.name}</option>)}
                       </select>
                       <input type="number" min="0.1" step="0.1" className="input-premium" style={{ flex: 1, paddingRight: '0.5rem' }} value={ingredientMl} onChange={e => setIngredientMl(e.target.value)} placeholder="e.g. 1.5" />
@@ -408,13 +430,13 @@ export default function SettingsView() {
                   </div>
 
                   <button type="submit" className="btn btn-primary w-full flex-center" disabled={!newRecipe.name || newRecipe.ingredients.length === 0}>
-                    <Save size={18} className="mr-2"/> Save Preset
+                    <Save size={18} className="mr-2"/> {t('settings.save_preset', 'Save Preset')}
                   </button>
                 </form>
 
                 <div className="glass p-4" style={{ borderRadius: 'var(--radius-md)' }}>
-                  <h3 className="text-md mb-3">Saved Presets</h3>
-                  {recipes.length === 0 ? <p className="text-sm text-muted">No presets found.</p> : (
+                  <h3 className="text-md mb-3">{t('settings.saved_presets', 'Saved Presets')}</h3>
+                  {recipes.length === 0 ? <p className="text-sm text-muted">{t('settings.no_presets', 'No presets found.')}</p> : (
                     <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {recipes.map(r => (
                         <li key={r.id} className="p-3" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
@@ -438,31 +460,31 @@ export default function SettingsView() {
             {nutrientTab === 'calculator' && (
               <div className="glass p-4" style={{ borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div>
-                  <h3 className="text-md mb-2">Dosage Calculator</h3>
-                  <p className="text-sm text-muted">Calculate the baseline (ml per 1 Liter) for your presets based on what's written on the fertilizer bottle.</p>
+                  <h3 className="text-md mb-2">{t('settings.dosage_calc', 'Dosage Calculator')}</h3>
+                  <p className="text-sm text-muted">{t('settings.dosage_calc_desc', "Calculate the baseline (ml per 1 Liter) for your presets based on what's written on the fertilizer bottle.")}</p>
                 </div>
                 
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <div style={{ flex: 1 }}>
-                    <label className="text-xs text-muted mb-1 block">Recommended Dose (ml)</label>
+                    <label className="text-xs text-muted mb-1 block">{t('settings.rec_dose', 'Recommended Dose (ml)')}</label>
                     <input type="number" min="0" step="0.1" className="input-premium" value={calcBoxDose} onChange={e => setCalcBoxDose(parseFloat(e.target.value) || 0)} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label className="text-xs text-muted mb-1 block">Per Water Volume (Liters)</label>
+                    <label className="text-xs text-muted mb-1 block">{t('settings.per_water_vol', 'Per Water Volume (Liters)')}</label>
                     <input type="number" min="0.1" step="0.1" className="input-premium" value={calcBoxVolume} onChange={e => setCalcBoxVolume(parseFloat(e.target.value) || 1)} />
                   </div>
                 </div>
 
                 <div>
                   <label className="text-xs text-muted mb-2 flex-between">
-                    <span>Target Strength Scale</span>
+                    <span>{t('settings.target_strength', 'Target Strength Scale')}</span>
                     <span className="font-semibold text-info">{calcTargetScale}%</span>
                   </label>
                   <input type="range" min="10" max="200" step="10" value={calcTargetScale} onChange={e => setCalcTargetScale(parseInt(e.target.value))} style={{ width: '100%' }} />
                 </div>
 
                 <div className="p-4" style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-                  <span className="text-sm text-muted block mb-1">Your Baseline for Presets</span>
+                  <span className="text-sm text-muted block mb-1">{t('settings.your_baseline', 'Your Baseline for Presets')}</span>
                   <span className="text-2xl font-bold text-success">
                     {((calcBoxDose / calcBoxVolume) * (calcTargetScale / 100)).toFixed(2)} ml / Liter
                   </span>

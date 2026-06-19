@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom';
 import { X, Calendar as CalendarIcon, Tag, Sprout, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import useGalleryStore from '../store/useGalleryStore';
 import usePlantStore from '../store/usePlantStore';
+import { useTranslation } from 'react-i18next';
 
 export default function GalleryView() {
+  const { t } = useTranslation();
   const { images, deleteGalleryImage } = useGalleryStore();
   const { plants } = usePlantStore();
   const [selectedImage, setSelectedImage] = useState(null);
@@ -15,7 +17,7 @@ export default function GalleryView() {
   };
 
   const getPlantName = (plantId) => {
-    return getPlant(plantId)?.name || 'Unknown Plant';
+    return getPlant(plantId)?.name || t('gallery.unknown_plant', 'Unknown Plant');
   };
 
   const getPlantStartDate = (plantId) => {
@@ -51,15 +53,15 @@ export default function GalleryView() {
     <div className="page-container">
       <div className="flex-between mb-4">
         <div>
-          <h1 className="text-gradient">Gallery</h1>
-          <p className="text-muted text-sm">Chronological grow history</p>
+          <h1 className="text-gradient">{t('gallery.title', 'Gallery')}</h1>
+          <p className="text-muted text-sm">{t('gallery.subtitle', 'Chronological grow history')}</p>
         </div>
       </div>
 
       {sortedPlantIds.length === 0 ? (
         <div className="flex-center text-muted" style={{ height: '50vh', flexDirection: 'column', gap: '1rem' }}>
           <div className="glass flex-center" style={{ width: 64, height: 64, borderRadius: '50%' }}>📸</div>
-          <p>No photos yet. Add some in the Plant Log!</p>
+          <p>{t('gallery.no_photos', 'No photos yet. Add some in the Plant Log!')}</p>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -88,7 +90,7 @@ export default function GalleryView() {
                   {startDate && (
                     <div className="text-sm text-muted flex-center" style={{ gap: '0.25rem' }}>
                       <CalendarIcon size={14} />
-                      <span className="font-semibold">Started:</span> {startDate}
+                      <span className="font-semibold">{t('gallery.started', 'Started:')}</span> {startDate}
                     </div>
                   )}
                 </div>
@@ -137,7 +139,7 @@ export default function GalleryView() {
             <button 
               className="btn" 
               onClick={() => {
-                if (window.confirm("Delete this photo?")) {
+                if (window.confirm(t('gallery.delete_confirm', "Delete this photo?"))) {
                   deleteGalleryImage(selectedImage.id);
                   setSelectedImage(null);
                 }
@@ -170,7 +172,7 @@ export default function GalleryView() {
               
               <div className="glass flex-center" style={{ padding: '4px 12px', borderRadius: 'var(--radius-full)', gap: '6px' }}>
                 <Tag size={14} className="text-primary" />
-                <span className="text-xs font-semibold">Day {selectedImage.daysSinceGermination}</span>
+                <span className="text-xs font-semibold">{t('gallery.day', 'Day {{day}}', { day: selectedImage.daysSinceGermination })}</span>
               </div>
               
               {selectedImage.phase && (
