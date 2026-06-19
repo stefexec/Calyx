@@ -1,0 +1,46 @@
+name: Build and Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Build web
+        run: npm run build
+        
+      - name: Sync Capacitor
+        run: npx cap sync android
+        
+      - name: set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Build with Gradle
+        working-directory: ./android
+        run: ./gradlew assembleRelease
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          name: Calyx ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
