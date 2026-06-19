@@ -68,7 +68,7 @@ export default function PlantsView() {
       id: 'qa-' + Math.random().toString(36).substr(2, 9),
       icon: 'Droplet',
       actionType: 'water',
-      label: 'Neue Aktion',
+      label: 'New Action',
       waterVolumeLiters: 1,
       notes: ''
     });
@@ -381,15 +381,15 @@ export default function PlantsView() {
                 <div style={{ display: 'flex', justifyContent: 'space-around' }}>
                   <div onClick={() => setActiveTab('log')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', opacity: activeTab === 'log' ? 1 : 0.6, color: activeTab === 'log' ? 'var(--success)' : 'inherit' }}>
                     <Zap size={24} />
-                    <span className="text-xs font-semibold">Aktion</span>
+                    <span className="text-xs font-semibold">Action</span>
                   </div>
                   <div onClick={() => setActiveTab('charts')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', opacity: activeTab === 'charts' ? 1 : 0.6, color: activeTab === 'charts' ? 'var(--info)' : 'inherit' }}>
                     <BarChart2 size={24} />
-                    <span className="text-xs font-semibold">Pflanzenlog</span>
+                    <span className="text-xs font-semibold">Plant Log</span>
                   </div>
                   <div onClick={() => setActiveTab('settings')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', opacity: activeTab === 'settings' ? 1 : 0.6, color: activeTab === 'settings' ? 'var(--warning)' : 'inherit' }}>
                     <Settings size={24} />
-                    <span className="text-xs font-semibold">Mehr</span>
+                    <span className="text-xs font-semibold">More</span>
                   </div>
                 </div>
               </div>
@@ -397,7 +397,7 @@ export default function PlantsView() {
               {currentPlant?.sensorConfig?.quickActions?.length > 0 && (
                 <div className="glass-card" style={{ padding: '1rem', marginBottom: '1.5rem', borderRadius: '16px', background: 'var(--bg-glass)' }}>
                   <div className="text-xs text-muted mb-4 font-semibold tracking-wider flex-between">
-                    <span>SOFORTMAßNAHMEN</span>
+                    <span>QUICK ACTIONS</span>
                     <Settings size={14} className="hover-opacity" style={{ cursor: 'pointer' }} onClick={() => setActiveTab('settings')} />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '1rem' }}>
@@ -411,7 +411,7 @@ export default function PlantsView() {
                           ) : (
                             <IconComponent size={28} className={`text-${getActionColor(action.actionType)}`} />
                           )}
-                          <span className="text-xs text-center" style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isSuccess ? 'Erfasst' : action.label}</span>
+                          <span className="text-xs text-center" style={{ maxWidth: '60px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isSuccess ? 'Saved' : action.label}</span>
                         </div>
                       );
                     })}
@@ -420,7 +420,7 @@ export default function PlantsView() {
               )}
 
               <div style={{ marginTop: '1rem' }}>
-                <div className="text-xs text-muted mb-3 font-semibold tracking-wider">{activeTab === 'log' ? 'NEUER EINTRAG' : activeTab === 'settings' ? 'EINSTELLUNGEN' : 'HISTORIE'}</div>
+                <div className="text-xs text-muted mb-3 font-semibold tracking-wider">{activeTab === 'log' ? 'NEW ENTRY' : activeTab === 'settings' ? 'SETTINGS' : 'HISTORY'}</div>
             {activeTab === 'log' && (
               <form onSubmit={handleLogSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div className="flex-center" style={{ flexDirection: 'column', gap: '0.5rem' }}>
@@ -576,7 +576,7 @@ export default function PlantsView() {
 
                 <div className="glass" style={{ padding: '1rem', borderRadius: 'var(--radius-md)' }}>
                   <div className="flex-between mb-3">
-                    <h3 className="text-md text-primary m-0">Sofortmaßnahmen</h3>
+                    <h3 className="text-md text-primary m-0">Quick Actions</h3>
                     <button className="btn btn-secondary" onClick={handleAddQuickAction} style={{ padding: '4px 8px', fontSize: '0.8rem' }}>
                       <Plus size={16} className="mr-1" /> Add
                     </button>
@@ -723,7 +723,7 @@ export default function PlantsView() {
                                 <span className="text-sm">
                                   {log.notes && log.notes.includes('|~|') 
                                     ? log.notes.split('|~|')[0] 
-                                    : (log.waterVolumeLiters > 0 ? 'Watering / Feed' : (log.notes || 'Aktion'))}
+                                    : (log.waterVolumeLiters > 0 ? 'Watering / Feed' : (log.notes || 'Action'))}
                                 </span>
                                 <span className="text-xs">
                                   {log.phInput != null && `pH: ${log.phInput}`}

@@ -283,7 +283,7 @@ export default function SettingsView() {
           </div>
           <p className="text-sm text-muted mb-4">Configure defaults for plant lifecycle calculations and scheduling.</p>
           <div className="mb-4">
-            <label className="text-xs text-muted mb-1 block">Standard Vegi-Dauer (Tage)</label>
+            <label className="text-xs text-muted mb-1 block">Standard Veg Duration (Days)</label>
             <input 
               type="number" 
               className="input-premium" 

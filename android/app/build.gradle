@@ -18,10 +18,10 @@ android {
         }
     }
 
-    namespace = "com.calyx.app"
+    namespace = "com.gurkenwerfer.calyx"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.calyx.app"
+        applicationId "com.gurkenwerfer.calyx"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

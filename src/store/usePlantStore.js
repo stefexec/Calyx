@@ -17,10 +17,10 @@ export const PlantPhase = {
 };
 
 export const defaultQuickActions = [
-  { id: 'qa-water', icon: 'Droplet', actionType: 'water', label: 'Wasser', waterVolumeLiters: 1, notes: 'Gegossen' },
-  { id: 'qa-nutes', icon: 'FileText', actionType: 'nutrients', label: 'Nährstoffe', waterVolumeLiters: 1, notes: 'Nährstoffe gegeben' },
-  { id: 'qa-bug', icon: 'Bug', actionType: 'bug', label: 'Abwehrmittel', waterVolumeLiters: 0, notes: 'Abwehrmittel aufgetragen' },
-  { id: 'qa-cut', icon: 'Scissors', actionType: 'trim', label: 'Beschneiden', waterVolumeLiters: 0, notes: 'Beschnitten' },
+  { id: 'qa-water', icon: 'Droplet', actionType: 'water', label: 'Water', waterVolumeLiters: 1, notes: 'Watered' },
+  { id: 'qa-nutes', icon: 'FileText', actionType: 'nutrients', label: 'Nutrients', waterVolumeLiters: 1, notes: 'Nutrients applied' },
+  { id: 'qa-bug', icon: 'Bug', actionType: 'bug', label: 'Repellent', waterVolumeLiters: 0, notes: 'Repellent applied' },
+  { id: 'qa-cut', icon: 'Scissors', actionType: 'trim', label: 'Prune', waterVolumeLiters: 0, notes: 'Pruned' },
 ];
 
 const usePlantStore = create((set, get) => ({

@@ -1,4 +1,4 @@
-package com.calyx.app;
+package com.gurkenwerfer.calyx;
 
 import com.getcapacitor.BridgeActivity;
 
