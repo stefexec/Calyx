@@ -15,6 +15,8 @@ const IconMap = {
   Droplet, FileText, Bug, Scissors, Plus, Activity, Zap, Check, Settings, Camera, Search
 };
 
+let cachedStrains = null;
+
 export default function PlantsView() {
   const { t } = useTranslation();
   const { plants, addPlant, updatePlant, toggleMoistureSensor, fetchPlantSensorStates, fetchPlantSensorHistory, deletePlant } = usePlantStore();
@@ -212,7 +214,16 @@ export default function PlantsView() {
       return;
     }
     try {
-      const results = await fetchApi(`/settings/strains/search?q=${encodeURIComponent(query)}`);
+      if (!cachedStrains) {
+        const res = await fetch('/strains.json');
+        cachedStrains = await res.json();
+      }
+      
+      const lowerQuery = query.toLowerCase();
+      const results = cachedStrains
+        .filter(s => s.name.toLowerCase().includes(lowerQuery))
+        .slice(0, 50);
+        
       setStrainResults(results);
     } catch (err) {
       console.error('Failed to search strains', err);
