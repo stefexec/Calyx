@@ -1,1 +1,1 @@
-Tracks indoor garden environments, plant schedules, and hardware entirely offline.
+Track indoor gardens, plant schedules, and hardware entirely offline.
